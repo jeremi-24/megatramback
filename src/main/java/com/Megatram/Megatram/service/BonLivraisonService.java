@@ -64,7 +64,7 @@ public class BonLivraisonService {
         BonLivraison bl = new BonLivraison();
         bl.setCommande(commande);
         bl.setDateLivraison(LocalDateTime.now());
-        bl.setStatut(BonLivraisonStatus.A_LIVRER);
+        bl.setStatut(BonLivraisonStatus.EN_ATTENTE);
 
         // 2. Créer les lignes de livraison et établir la relation bidirectionnelle
         List<LigneLivraison> lignes = new ArrayList<>();
