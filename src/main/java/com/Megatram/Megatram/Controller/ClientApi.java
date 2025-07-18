@@ -65,7 +65,7 @@ public class ClientApi {
     }
 
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DG')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<List<ClientDto>> getAllClientsForAdminOrDG() {
         List<ClientDto> clients = clientService.findAllClientsForAdminOrDG();
