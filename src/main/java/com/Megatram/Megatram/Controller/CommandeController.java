@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -56,12 +57,21 @@ public class CommandeController {
         return ResponseEntity.ok(commande);
     }
 
-    @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', générant facture et bon de livraison.")
+//    @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', générant facture et bon de livraison.")
+//    @PostMapping("/{id}/valider")
+//    public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id) {
+//        CommandeService.ValidationResponse response = commandeService.validerCommande(id);
+//        return ResponseEntity.ok(response);
+//    }
+
+
+    @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
     @PostMapping("/{id}/valider")
-    public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id) {
-        CommandeService.ValidationResponse response = commandeService.validerCommande(id);
+    public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
+        CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
         return ResponseEntity.ok(response);
     }
+
 
     @Operation(summary = "Modifier une commande existante", description = "Met à jour une commande 'EN ATTENTE'.")
     @PutMapping("/{id}")

@@ -18,7 +18,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal; // <-- N'oubliez pas cet import
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -52,7 +54,7 @@ public class BonLivraisonController {
     }
 
     @Operation(summary = "Valide une livraison et décrémente le stock (réservé Magasinier/Admin)")
-    @PutMapping("/{id}/valider")
+    @PutMapping("/{id}/valider2")
     @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
     // CORRECTION ICI : On ajoute 'Principal principal' en paramètre
     public ResponseEntity<?> validerLivraison(@PathVariable Long id, Principal principal) {
@@ -67,23 +69,41 @@ public class BonLivraisonController {
         }
     }
 
+    @PutMapping("/{id}/valider1")
+    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
+    public ResponseEntity<?> validerLivraison1(@PathVariable Long id, Principal principal) {
+        try {
+            BonLivraisonResponseDTO bl = bonLivraisonService.validerETAttendre(id, principal.getName());
 
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "Livraison validée en attente de validation finale par le magasinier.");
+            response.put("bonLivraison", bl);
 
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", HttpStatus.NOT_FOUND.value());
+            error.put("error", "Bon de livraison non trouvé");
+            error.put("message", e.getMessage());
 
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        } catch (IllegalStateException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", HttpStatus.BAD_REQUEST.value());
+            error.put("error", "Erreur de validation");
+            error.put("message", e.getMessage());
 
-//    @Operation(summary = "Récupère les bons de livraison pour le lieu concerné")
-//    @GetMapping("/bons")
-//    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT' ,'MAGASINIER')")
-//    public ResponseEntity<List<BonLivraisonResponseDTO>> getBonsLivraisonMagasinier() {
-//        Utilisateur magasinier = utilisateurService.getUtilisateurConnecte();
-//        if (magasinier == null || magasinier.getLieu() == null) {
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // ou 401 Unauthorized selon ton cas
-//        }
-//
-//        Long lieuId = magasinier.getLieu().getId();
-//        List<BonLivraisonResponseDTO> bons = bonLivraisonService.getBonsLivraisonParLieu(lieuId);
-//        return ResponseEntity.ok(bons);
-//    }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            error.put("error", "Erreur serveur");
+            error.put("message", "Une erreur inattendue est survenue.");
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 
 
     @Operation(summary = "Récupère les bons de livraison pour le lieu concerné")

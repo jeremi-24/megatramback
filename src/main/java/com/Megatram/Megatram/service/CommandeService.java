@@ -98,21 +98,47 @@ public class CommandeService {
         return convertToResponseDTO(commande);
     }
 
+//    @Transactional
+//    public ValidationResponse validerCommande(Long id) {
+//        Commande commande = commandeRepository.findById(id)
+//                .orElseThrow(() -> new EntityNotFoundException("Commande non trouvée avec l'ID : " + id));
+//        if (commande.getStatut() != StatutCommande.EN_ATTENTE) {
+//            throw new IllegalStateException("Seule une commande EN_ATTENTE peut être validée.");
+//        }
+//
+//        commande.setStatut(StatutCommande.VALIDEE);
+//        Commande commandeValidee = commandeRepository.save(commande);
+//
+//        FactureResponseDTO factureDto = factureService.genererFacturePourCommande(commandeValidee.getId());
+//        BonLivraisonResponseDTO bonLivraisonDto = bonLivraisonService.genererBonLivraison(commandeValidee.getId());
+//
+//        return new ValidationResponse(convertToResponseDTO(commandeValidee), factureDto, bonLivraisonDto);
+//    }
+
     @Transactional
-    public ValidationResponse validerCommande(Long id) {
+    public ValidationResponse validerCommande(Long id, String agentEmail) {
         Commande commande = commandeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Commande non trouvée avec l'ID : " + id));
+
         if (commande.getStatut() != StatutCommande.EN_ATTENTE) {
             throw new IllegalStateException("Seule une commande EN_ATTENTE peut être validée.");
         }
 
+        // 1. Valider la commande
         commande.setStatut(StatutCommande.VALIDEE);
         Commande commandeValidee = commandeRepository.save(commande);
 
+        // 2. Générer la facture
         FactureResponseDTO factureDto = factureService.genererFacturePourCommande(commandeValidee.getId());
+
+        // 3. Générer le bon de livraison
         BonLivraisonResponseDTO bonLivraisonDto = bonLivraisonService.genererBonLivraison(commandeValidee.getId());
 
-        return new ValidationResponse(convertToResponseDTO(commandeValidee), factureDto, bonLivraisonDto);
+        // 4. Valider automatiquement le bon de livraison
+        BonLivraisonResponseDTO bonLivraisonValide = bonLivraisonService.validerEtLivrer(bonLivraisonDto.getId(), agentEmail);
+
+        // 5. Retourner la réponse complète
+        return new ValidationResponse(convertToResponseDTO(commandeValidee), factureDto, bonLivraisonValide);
     }
 
     @Transactional

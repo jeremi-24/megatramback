@@ -104,8 +104,7 @@ public class BonLivraisonService {
         BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
                 .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
 
-        if (bl.getStatut() != BonLivraisonStatus.A_LIVRER) {
-            throw new IllegalStateException("Cette livraison a déjà été validée.");
+        if (bl.getStatut() != BonLivraisonStatus.EN_ATTENTE && bl.getStatut() != BonLivraisonStatus.A_LIVRER) {            throw new IllegalStateException("Cette livraison a déjà été validée.");
         }
 
         // --- Logique de décrémentation du stock (inchangée) ---
@@ -133,6 +132,30 @@ public class BonLivraisonService {
 
         return buildResponseDTO(updatedBl);
     }
+
+
+
+
+
+
+    public BonLivraisonResponseDTO validerETAttendre(Long bonLivraisonId, String agentEmail) {
+        BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
+                .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
+
+
+        // Suppression de la décrémentation de stock (logique enlevée)
+
+        // Mise à jour du statut : passer à A_LIVRER
+        bl.setStatut(BonLivraisonStatus.A_LIVRER);
+        BonLivraison updatedBl = bonLivraisonRepository.save(bl);
+
+        // Tu peux enlever la création de vente et la notification si ce n’est pas encore livré
+        // venteService.creerVenteDepuisBonLivraison(updatedBl, agentEmail);
+        // notificationService.envoyerNotification("/topic/secretariat", "La livraison N°" + updatedBl.getId() + " est prête à être livrée.");
+
+        return buildResponseDTO(updatedBl);
+    }
+
     /**
      * Récupère les BLs pour un lieu de stock spécifique.
      * C'est ce que le magasinier utilisera pour voir sa liste de travail.
