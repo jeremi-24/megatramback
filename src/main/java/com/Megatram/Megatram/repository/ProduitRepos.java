@@ -18,4 +18,5 @@ public interface ProduitRepos extends JpaRepository<Produit, Long> {
     Optional<Produit> findByCodeBarre(String codeBarre);
 
     boolean existsByLieuStockId(Long id);
+
 }

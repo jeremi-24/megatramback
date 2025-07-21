@@ -12,9 +12,12 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import com.itextpdf.text.log.LoggerFactory;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,10 +26,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
@@ -135,31 +138,38 @@ public class ProduitService {
         return new ProduitDto(produit);
     }
 
-    /**
-     * Supprime un produit et l'image de son code-barres.
-     */
+//    /**
+//     * Supprime un produit  ou  plusieurs  l'image de son code-barres.
+//     */
     public void deleteProduit(Long id) {
         Produit produit = produitRepos.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé pour la suppression : " + id));
 
         deleteBarcodeImage(produit.getCodeBarre());
-        produitRepos.delete(produit);
+        produitRepos.delete(produit); // fonctionne maintenant grâce à ON DELETE SET NULL
     }
 
-    /**
-     * Supprime une liste de produits et leurs images de codes-barres.
-     */
-    public void deleteProduitsByIds(List<Long> ids) {
-        List<Produit> produitsToDelete = produitRepos.findAllById(ids);
-        for (Produit produit : produitsToDelete) {
-            deleteBarcodeImage(produit.getCodeBarre());
+    public List<String> deleteProduitsEnIgnorantErreurs(List<Long> ids) {
+        List<String> nomsNonSupprimes = new ArrayList<>();
+
+        for (Long id : ids) {
+            try {
+                produitRepos.deleteById(id);
+            } catch (DataIntegrityViolationException e) {
+                // Récupère le nom du produit qui n'a pas pu être supprimé
+                produitRepos.findById(id).ifPresent(produit -> nomsNonSupprimes.add(produit.getNom()));
+            }
         }
-        produitRepos.deleteAll(produitsToDelete);
+
+        return nomsNonSupprimes; // Retourne la liste des noms des produits non supprimés
     }
+
+
 
     /**
      * Importer des produits en masse depuis un fichier Excel.
      */
+
     public List<ProduitDto> importProduitsFromExcel(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Le fichier fourni est vide.");
@@ -170,64 +180,84 @@ public class ProduitService {
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            Map<String, Integer> columnIndex = new HashMap<>();
-
-            // 🔍 Lire les noms de colonnes dynamiquement
             Row headerRow = sheet.getRow(0);
+
+            Map<String, Integer> colIndexMap = new HashMap<>();
             for (Cell cell : headerRow) {
-                String colName = formatter.formatCellValue(cell).trim().toLowerCase();
-                columnIndex.put(colName, cell.getColumnIndex());
+                String header = formatter.formatCellValue(cell).trim().toLowerCase();
+                colIndexMap.put(header, cell.getColumnIndex());
+            }
+
+            // Vérifie uniquement les colonnes obligatoires : nom et ref
+            String[] requiredCols = {"nom", "ref"};
+            for (String col : requiredCols) {
+                if (!colIndexMap.containsKey(col)) {
+                    throw new IllegalArgumentException("Colonne obligatoire manquante dans le fichier Excel: " + col);
+                }
             }
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                String nom = formatter.formatCellValue(row.getCell(columnIndex.get("nom"))).trim();
-                if (nom.isBlank()) continue;
+                String nom = formatter.formatCellValue(row.getCell(colIndexMap.get("nom"))).trim();
+                if (nom.isEmpty()) continue; // Ignore ligne vide
 
-                Produit produit = new Produit();
-                produit.setNom(nom);
-                produit.setRef(formatter.formatCellValue(row.getCell(columnIndex.get("ref"))).trim());
-                produit.setPrix(Double.parseDouble(formatter.formatCellValue(row.getCell(columnIndex.get("prix"))).trim()));
-                produit.setQteMin(Integer.parseInt(formatter.formatCellValue(row.getCell(columnIndex.get("qte"))).trim()));
-                produit.setQte(0);
+                String ref = formatter.formatCellValue(row.getCell(colIndexMap.get("ref"))).trim();
+                if (ref.isEmpty()) continue; // Ignore si pas de ref
 
-                // 🏷️ Catégorie (créée si elle n'existe pas)
-                String categorieNom = formatter.formatCellValue(row.getCell(columnIndex.get("categorie"))).trim();
-                if (!categorieNom.isBlank()) {
-                    Categorie cat = categorieRep.findByNomIgnoreCase(categorieNom)
-                            .orElseGet(() -> {
-                                Categorie nouvelleCat = new Categorie();
-                                nouvelleCat.setNom(categorieNom);
-                                return categorieRep.save(nouvelleCat);
-                            });
-                    produit.setCategorie(cat);
+                Produit p = new Produit();
+                p.setNom(nom);
+                p.setRef(ref);
+
+                // Prix (optionnel)
+                if (colIndexMap.containsKey("prix")) {
+                    String prixStr = formatter.formatCellValue(row.getCell(colIndexMap.get("prix"))).trim();
+                    p.setPrix(parseDoubleSafe(prixStr, 0.0));
                 }
 
-                // 📦 Lieu de stock (créé si il n'existe pas)
-                if (columnIndex.containsKey("lieu") || columnIndex.containsKey("lieustock")) {
-                    int lieuCol = columnIndex.containsKey("lieu") ? columnIndex.get("lieu") : columnIndex.get("lieustock");
-                    String lieuNom = formatter.formatCellValue(row.getCell(lieuCol)).trim();
-                    if (!lieuNom.isBlank()) {
-                        LieuStock lieu = lieuStockRepository.findByNomIgnoreCase(lieuNom)
+                // Quantité (optionnelle)
+                if (colIndexMap.containsKey("qte")) {
+                    String qteStr = formatter.formatCellValue(row.getCell(colIndexMap.get("qte"))).trim();
+                    p.setQteMin(parseIntSafe(qteStr, 0));
+                }
+                p.setQte(0); // Toujours initialisé à 0
+
+                // Catégorie (optionnelle)
+                if (colIndexMap.containsKey("categorie")) {
+                    String categorieNom = formatter.formatCellValue(row.getCell(colIndexMap.get("categorie"))).trim();
+                    if (!categorieNom.isEmpty()) {
+                        Categorie cat = categorieRep.findByNomIgnoreCase(categorieNom)
                                 .orElseGet(() -> {
-                                    LieuStock nouveau = new LieuStock();
-                                    nouveau.setNom(lieuNom);
-                                    return lieuStockRepository.save(nouveau);
+                                    Categorie nouvelleCat = new Categorie();
+                                    nouvelleCat.setNom(categorieNom);
+                                    return categorieRep.save(nouvelleCat);
                                 });
-                        produit.setLieuStock(lieu);
+                        p.setCategorie(cat);
                     }
                 }
 
-                produits.add(produit);
+                // Lieu (optionnel)
+                if (colIndexMap.containsKey("lieu")) {
+                    String lieuStockNom = formatter.formatCellValue(row.getCell(colIndexMap.get("lieu"))).trim();
+                    if (!lieuStockNom.isEmpty()) {
+                        LieuStock lieu = lieuStockRepository.findByNomIgnoreCase(lieuStockNom)
+                                .orElseGet(() -> {
+                                    LieuStock nouveauLieu = new LieuStock();
+                                    nouveauLieu.setNom(lieuStockNom);
+                                    return lieuStockRepository.save(nouveauLieu);
+                                });
+                        p.setLieuStock(lieu);
+                    }
+                }
+
+                produits.add(p);
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Erreur lors de l'importation Excel : " + e.getMessage(), e);
+            throw new RuntimeException("Erreur lors de la lecture du fichier Excel: " + e.getMessage(), e);
         }
 
-        // Sauvegarde en base
         List<Produit> savedProduits = produitRepos.saveAll(produits);
         savedProduits.forEach(p -> generateBarcodeImage(p.getCodeBarre()));
 
@@ -237,89 +267,60 @@ public class ProduitService {
     }
 
 
-//    public List<ProduitDto> importProduitsFromExcel(MultipartFile file) {
-//        if (file.isEmpty()) {
-//            throw new IllegalArgumentException("Le fichier fourni est vide.");
-//        }
-//
-//        List<Produit> produits = new ArrayList<>();
-//        DataFormatter formatter = new DataFormatter(); // Format sûr pour lecture de toutes les cellules
-//
-//        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
-//            Sheet sheet = workbook.getSheetAt(0);
-//
-//            for (Row row : sheet) {
-//                if (row.getRowNum() == 0) continue; // Ignorer l'en-tête
-//
-//                Cell nomCell = row.getCell(0);
-//                if (nomCell == null || nomCell.getCellType() == CellType.BLANK) continue; // Ignorer lignes vides
-//
-//                Produit p = new Produit();
-//
-//                // Lecture des valeurs texte ou numériques en toute sécurité
-//                p.setNom(formatter.formatCellValue(row.getCell(0)).trim());
-//                p.setRef(formatter.formatCellValue(row.getCell(1)).trim());
-//                p.setPrix(Double.parseDouble(formatter.formatCellValue(row.getCell(2)).trim()));
-//                p.setQteMin(Integer.parseInt(formatter.formatCellValue(row.getCell(3)).trim()));
-//                p.setQte(0);
-//
-//                // --- LOGIQUE D'ASSOCIATION ---
-//
-//                // Catégorie
-//                String categorieNom = formatter.formatCellValue(row.getCell(4)).trim();
-//                if (!categorieNom.isBlank()) {
-//                    Categorie cat = categorieRep.findByNomIgnoreCase(categorieNom)
-//                            .orElseGet(() -> {
-//                                Categorie nouvelleCat = new Categorie();
-//                                nouvelleCat.setNom(categorieNom);
-//                                return categorieRep.save(nouvelleCat);
-//                            });
-//                    p.setCategorie(cat);
-//                }
-//
-//                // Lieu de stock
-//                String lieuStockNom = formatter.formatCellValue(row.getCell(6)).trim();
-//                System.out.println("Lieu stock lu depuis Excel : '" + lieuStockNom + "'"); // Debug
-//                if (!lieuStockNom.isBlank()) {
-//                    LieuStock lieu = lieuStockRepository.findByNomIgnoreCase(lieuStockNom)
-//                            .orElseGet(() -> {
-//                                LieuStock nouveauLieu = new LieuStock();
-//                                nouveauLieu.setNom(lieuStockNom);
-//                                return lieuStockRepository.save(nouveauLieu);
-//                            });
-//                    p.setLieuStock(lieu);
-//                }
-//
-//                produits.add(p);
-//            }
-//        } catch (Exception e) {
-//            throw new RuntimeException("Erreur lors de la lecture du fichier Excel: " + e.getMessage(), e);
-//        }
-//
-//        List<Produit> savedProduits = produitRepos.saveAll(produits);
-//        savedProduits.forEach(p -> generateBarcodeImage(p.getCodeBarre()));
-//
-//        return savedProduits.stream()
-//                .map(ProduitDto::new)
-//                .collect(Collectors.toList());
-//    }
 
-    // --- Méthodes privées utilitaires ---
+
+
+    // Méthodes utilitaires
+    private double parseDoubleSafe(String value, double defaultValue) {
+        try {
+            return Double.parseDouble(value.replace(",", "."));
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    private int parseIntSafe(String value, int defaultValue) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+
+
+    /**
+     * Récupère la valeur d'une cellule de manière sécurisée
+     */
+    private String getValueSafely(Row row, Integer columnIndex, DataFormatter formatter) {
+        if (columnIndex == null) {
+            return "";
+        }
+        Cell cell = row.getCell(columnIndex);
+        if (cell == null) {
+            return "";
+        }
+        return formatter.formatCellValue(cell).trim();
+    }
+
 
     private void generateBarcodeImage(String barcodeText) {
-        if (barcodeText == null || barcodeText.isEmpty()) {
-            return;
-        }
+        // Si pas de texte, on fait rien
+        if (barcodeText == null || barcodeText.isEmpty()) return;
+
         try {
-            if (!Files.exists(barcodeStoragePath)) {
-                Files.createDirectories(barcodeStoragePath);
-            }
-            Path outputPath = barcodeStoragePath.resolve(barcodeText + ".png");
-            BitMatrix bitMatrix = new MultiFormatWriter().encode(barcodeText, BarcodeFormat.CODE_128, 300, 100);
-            MatrixToImageWriter.writeToPath(bitMatrix, "PNG", outputPath);
+            // Créer le dossier si il existe pas
+            Files.createDirectories(barcodeStoragePath);
+
+            // Chemin du fichier
+            Path fichier = barcodeStoragePath.resolve(barcodeText + ".png");
+
+            // Générer le code-barres et sauvegarder
+            BitMatrix matrix = new MultiFormatWriter().encode(barcodeText, BarcodeFormat.CODE_128, 300, 100);
+            MatrixToImageWriter.writeToPath(matrix, "PNG", fichier);
+
         } catch (Exception e) {
-            // Logguer l'erreur mais ne pas faire échouer la transaction principale
-            System.err.println("ERREUR: Impossible de générer l'image du code-barres '" + barcodeText + "': " + e.getMessage());
+            System.out.println("Erreur code-barres: " + e.getMessage());
         }
     }
 

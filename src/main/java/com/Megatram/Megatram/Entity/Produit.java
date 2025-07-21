@@ -3,6 +3,8 @@ package com.Megatram.Megatram.Entity;
 
 import jakarta.persistence.*;
 
+import java.util.UUID;
+
 @Entity
 public class Produit {
 
@@ -34,7 +36,8 @@ public class Produit {
     @PrePersist
     public void genererCodeBarre() {
         if (this.codeBarre == null || this.codeBarre.isEmpty()) {
-            this.codeBarre = "PROD-" + System.currentTimeMillis();
+            String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(); // ex: "A1B2C3D4"
+            this.codeBarre = "PROD-" + suffix;
         }
     }
 

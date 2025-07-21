@@ -8,6 +8,7 @@ import com.Megatram.Megatram.service.UtilisateurService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal; // <-- N'oubliez pas cet import
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,45 @@ public class BonLivraisonController {
     @Autowired
     private UtilisateurService utilisateurService;
 
+//    @Operation(summary = "Génère un Bon de Livraison pour une commande (réservé Secrétariat/Admin)")
+//    @PostMapping
+//    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
+//    public ResponseEntity<?> genererBonLivraison(@RequestParam Long commandeId) {
+//        try {
+//            BonLivraisonResponseDTO bl = bonLivraisonService.genererBonLivraison(commandeId);
+//            return new ResponseEntity<>(bl, HttpStatus.CREATED);
+//        } catch (EntityNotFoundException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+//        } catch (IllegalStateException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+//        }
+//    }
+//
+//    @Operation(summary = "Valide une livraison et décrémente le stock (réservé Magasinier/Admin)")
+//    @PutMapping("/{id}/valider2")
+//    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
+//    // CORRECTION ICI : On ajoute 'Principal principal' en paramètre
+//    public ResponseEntity<?> validerLivraison(@PathVariable Long id, Principal principal) {
+//        try {
+//            // Et on passe le nom de l'utilisateur (son email) en deuxième argument
+//            BonLivraisonResponseDTO bl = bonLivraisonService.validerEtLivrer(id, principal.getName());
+//            return ResponseEntity.ok(bl);
+//        } catch (EntityNotFoundException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+//        } catch (IllegalStateException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+//        }
+//    }
+
+
+
     @Operation(summary = "Génère un Bon de Livraison pour une commande (réservé Secrétariat/Admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Bon de livraison généré avec succès"),
+            @ApiResponse(responseCode = "404", description = "Commande non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Impossible de générer le bon de livraison à cause d’un état invalide"),
+            @ApiResponse(responseCode = "403", description = "Accès interdit")
+    })
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
     public ResponseEntity<?> genererBonLivraison(@RequestParam Long commandeId) {
@@ -47,28 +87,108 @@ public class BonLivraisonController {
             BonLivraisonResponseDTO bl = bonLivraisonService.genererBonLivraison(commandeId);
             return new ResponseEntity<>(bl, HttpStatus.CREATED);
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Commande introuvable. Veuillez vérifier l'identifiant fourni.");
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Le bon de livraison ne peut pas être généré : " + e.getMessage());
         }
     }
 
+
+
     @Operation(summary = "Valide une livraison et décrémente le stock (réservé Magasinier/Admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Livraison validée et stock décrémenté"),
+            @ApiResponse(responseCode = "404", description = "Bon de livraison non trouvé"),
+            @ApiResponse(responseCode = "400", description = "Livraison non valide : déjà livrée ou en erreur"),
+            @ApiResponse(responseCode = "403", description = "Accès interdit")
+    })
     @PutMapping("/{id}/valider2")
     @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
-    // CORRECTION ICI : On ajoute 'Principal principal' en paramètre
     public ResponseEntity<?> validerLivraison(@PathVariable Long id, Principal principal) {
         try {
-            // Et on passe le nom de l'utilisateur (son email) en deuxième argument
             BonLivraisonResponseDTO bl = bonLivraisonService.validerEtLivrer(id, principal.getName());
             return ResponseEntity.ok(bl);
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Bon de livraison introuvable. Veuillez vérifier l'identifiant fourni.");
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("La validation de la livraison a échoué : " + e.getMessage());
         }
     }
 
+
+
+//    @PutMapping("/{id}/valider1")
+//    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
+//    public ResponseEntity<?> validerLivraison1(@PathVariable Long id, Principal principal) {
+//        try {
+//            BonLivraisonResponseDTO bl = bonLivraisonService.validerETAttendre(id, principal.getName());
+//
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("status", HttpStatus.OK.value());
+//            response.put("message", "Livraison validée en attente de validation finale par le magasinier.");
+//            response.put("bonLivraison", bl);
+//
+//            return ResponseEntity.ok(response);
+//        } catch (EntityNotFoundException e) {
+//            Map<String, Object> error = new HashMap<>();
+//            error.put("status", HttpStatus.NOT_FOUND.value());
+//            error.put("error", "Bon de livraison non trouvé");
+//            error.put("message", e.getMessage());
+//
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+//        } catch (IllegalStateException e) {
+//            Map<String, Object> error = new HashMap<>();
+//            error.put("status", HttpStatus.BAD_REQUEST.value());
+//            error.put("error", "Erreur de validation");
+//            error.put("message", e.getMessage());
+//
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+//        } catch (Exception e) {
+//            Map<String, Object> error = new HashMap<>();
+//            error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+//            error.put("error", "Erreur serveur");
+//            error.put("message", "Une erreur inattendue est survenue.");
+//
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+//        }
+//    }
+//
+//
+//    @Operation(summary = "Récupère les bons de livraison pour le lieu concerné")
+//    @GetMapping("/bons")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
+//    public ResponseEntity<List<BonLivraisonResponseDTO>> getBonsLivraisonMagasinier() {
+//        Utilisateur magasinier = utilisateurService.getUtilisateurConnecte();
+//
+//        if (magasinier == null || magasinier.getLieu() == null) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+//        }
+//
+//        Long lieuId = magasinier.getLieu().getId();
+//        String email = magasinier.getEmail();
+//
+//        List<BonLivraisonResponseDTO> bons = bonLivraisonService.getBonsLivraisonParLieu(lieuId);
+//
+//        // Injecter l'email dans chaque bon
+//        bons.forEach(bon -> bon.setEmail(email));
+//
+//        return ResponseEntity.ok(bons);
+//    }
+
+
+
+
+    @Operation(summary = "Valide une livraison en attente de confirmation finale (réservé Secrétariat/Admin)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Livraison en attente validée avec succès"),
+            @ApiResponse(responseCode = "400", description = "Échec de validation dû à un état invalide"),
+            @ApiResponse(responseCode = "404", description = "Bon de livraison non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     @PutMapping("/{id}/valider1")
     @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
     public ResponseEntity<?> validerLivraison1(@PathVariable Long id, Principal principal) {
@@ -77,7 +197,7 @@ public class BonLivraisonController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", HttpStatus.OK.value());
-            response.put("message", "Livraison validée en attente de validation finale par le magasinier.");
+            response.put("message", "Livraison validée et en attente de validation finale par le magasinier.");
             response.put("bonLivraison", bl);
 
             return ResponseEntity.ok(response);
@@ -85,13 +205,13 @@ public class BonLivraisonController {
             Map<String, Object> error = new HashMap<>();
             error.put("status", HttpStatus.NOT_FOUND.value());
             error.put("error", "Bon de livraison non trouvé");
-            error.put("message", e.getMessage());
+            error.put("message", "Aucun bon de livraison ne correspond à l'identifiant fourni.");
 
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         } catch (IllegalStateException e) {
             Map<String, Object> error = new HashMap<>();
             error.put("status", HttpStatus.BAD_REQUEST.value());
-            error.put("error", "Erreur de validation");
+            error.put("error", "État invalide");
             error.put("message", e.getMessage());
 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -99,33 +219,41 @@ public class BonLivraisonController {
             Map<String, Object> error = new HashMap<>();
             error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
             error.put("error", "Erreur serveur");
-            error.put("message", "Une erreur inattendue est survenue.");
+            error.put("message", "Une erreur inattendue est survenue. Veuillez réessayer plus tard.");
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
 
-    @Operation(summary = "Récupère les bons de livraison pour le lieu concerné")
+
+
+    @Operation(summary = "Récupère les bons de livraison pour le lieu du magasinier connecté")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Liste des bons de livraison récupérée avec succès"),
+            @ApiResponse(responseCode = "403", description = "Accès interdit ou lieu non défini pour l'utilisateur")
+    })
     @GetMapping("/bons")
     @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
     public ResponseEntity<List<BonLivraisonResponseDTO>> getBonsLivraisonMagasinier() {
         Utilisateur magasinier = utilisateurService.getUtilisateurConnecte();
 
         if (magasinier == null || magasinier.getLieu() == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Collections.emptyList()); // ou un message JSON si tu veux
         }
 
         Long lieuId = magasinier.getLieu().getId();
         String email = magasinier.getEmail();
 
         List<BonLivraisonResponseDTO> bons = bonLivraisonService.getBonsLivraisonParLieu(lieuId);
-
-        // Injecter l'email dans chaque bon
         bons.forEach(bon -> bon.setEmail(email));
 
         return ResponseEntity.ok(bons);
     }
+
+
+
 
 
     @Operation(

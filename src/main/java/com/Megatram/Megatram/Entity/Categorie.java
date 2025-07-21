@@ -24,6 +24,13 @@ public class Categorie {
         this.id = id;
     }
 
+
+    public Categorie() {} // constructeur vide requis par JPA
+
+    public Categorie(String nom) {
+        this.nom = nom;
+    }
+
     public String getRefCategorie() {
         return refCategorie;
     }

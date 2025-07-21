@@ -16,11 +16,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -87,6 +85,12 @@ public class ProduitController {
         }
     }
 
+
+
+
+
+
+
     @Operation(summary = "Supprime un produit par son ID")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -95,31 +99,50 @@ public class ProduitController {
         return ResponseEntity.noContent().build();
     }
 
+
+
     @Operation(summary = "Supprime plusieurs produits par leurs IDs")
     @DeleteMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteMultipleProduits(@RequestBody List<Long> ids) {
+    public ResponseEntity<?> deleteMultipleProduits(@RequestBody List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return ResponseEntity.badRequest().body("La liste des IDs ne peut pas être vide.");
         }
-        produitService.deleteProduitsByIds(ids);
-        return ResponseEntity.noContent().build(); // noContent signifie "Opération réussie, pas de contenu à renvoyer"
+
+        List<String> nomsNonSupprimes = produitService.deleteProduitsEnIgnorantErreurs(ids);
+
+        if (!nomsNonSupprimes.isEmpty()) {
+            String message = "Impossible de supprimer les produits suivants car ils sont utilisés : " + String.join(", ", nomsNonSupprimes);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
+        }
+
+        return ResponseEntity.noContent().build();
     }
+
+
+
+
 
     @Operation(summary = "Importe des produits depuis un fichier Excel (.xlsx)")
     @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty() || !file.getOriginalFilename().toLowerCase().endsWith(".xlsx")) {
-            return ResponseEntity.badRequest().body("Veuillez fournir un fichier Excel (.xlsx) valide.");
-        }
-
-        // On déclare la variable 'produitsImportes'
-        List<ProduitDto> produitsImportes = produitService.importProduitsFromExcel(file);
-
-        // Et on utilise exactement le même nom de variable ici. C'est ici que l'erreur s'était glissée.
-        return ResponseEntity.ok(produitsImportes);
+    public ResponseEntity<List<ProduitDto>> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
+        List<ProduitDto> produits = produitService.importProduitsFromExcel(file);
+        return ResponseEntity.ok(produits);
     }
+
+
+//
+//    public ResponseEntity<?> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
+//        if (file.isEmpty() || !file.getOriginalFilename().toLowerCase().endsWith(".xlsx")) {
+//            return ResponseEntity.badRequest().body("Veuillez fournir un fichier Excel (.xlsx) valide.");
+//        }
+//
+//        // On déclare la variable 'produitsImportes'
+//        List<ProduitDto> produitsImportes = produitService.importProduitsFromExcel(file);
+//
+//        // Et on utilise exactement le même nom de variable ici. C'est ici que l'erreur s'était glissée.
+//        return ResponseEntity.ok(produitsImportes);
+//    }
 
 
     @Operation(summary = "Récupère l'image PNG d'un code-barres de produit")

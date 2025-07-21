@@ -3,6 +3,8 @@ package com.Megatram.Megatram.Controller;
 import com.Megatram.Megatram.Dto.ClientDto;
 import com.Megatram.Megatram.service.ClientService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -71,5 +73,9 @@ public class ClientApi {
         List<ClientDto> clients = clientService.findAllClientsForAdminOrDG();
         return ResponseEntity.ok(clients);
     }
+
+
+
+
 
 }

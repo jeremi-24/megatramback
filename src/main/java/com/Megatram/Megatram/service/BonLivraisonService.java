@@ -97,6 +97,10 @@ public class BonLivraisonService {
 
         return buildResponseDTO(savedBl);
     }
+
+
+
+
     /**
      * Action du magasinier : valide la livraison, décrémente le stock, crée la vente et notifie la secrétaire.
      */
@@ -136,25 +140,41 @@ public class BonLivraisonService {
 
 
 
+//    public BonLivraisonResponseDTO validerETAttendre(Long bonLivraisonId, String agentEmail) {
+//        BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
+//                .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
+//
+//
+//        // Suppression de la décrémentation de stock (logique enlevée)
+//
+//        // Mise à jour du statut : passer à A_LIVRER
+//        bl.setStatut(BonLivraisonStatus.A_LIVRER);
+//        BonLivraison updatedBl = bonLivraisonRepository.save(bl);
+//
+//        // Tu peux enlever la création de vente et la notification si ce n’est pas encore livré
+//        // venteService.creerVenteDepuisBonLivraison(updatedBl, agentEmail);
+//        // notificationService.envoyerNotification("/topic/secretariat", "La livraison N°" + updatedBl.getId() + " est prête à être livrée.");
+//
+//        return buildResponseDTO(updatedBl);
+//    }
 
 
     public BonLivraisonResponseDTO validerETAttendre(Long bonLivraisonId, String agentEmail) {
         BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
                 .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
 
+        // ❌ Suppression de la mise à jour du statut "A_LIVRER"
+        // ✅ On remet explicitement le statut à EN_ATTENTE (optionnel si c’est déjà son état actuel)
+        bl.setStatut(BonLivraisonStatus.EN_ATTENTE);
 
-        // Suppression de la décrémentation de stock (logique enlevée)
-
-        // Mise à jour du statut : passer à A_LIVRER
-        bl.setStatut(BonLivraisonStatus.A_LIVRER);
+        // Enregistrement
         BonLivraison updatedBl = bonLivraisonRepository.save(bl);
 
-        // Tu peux enlever la création de vente et la notification si ce n’est pas encore livré
-        // venteService.creerVenteDepuisBonLivraison(updatedBl, agentEmail);
-        // notificationService.envoyerNotification("/topic/secretariat", "La livraison N°" + updatedBl.getId() + " est prête à être livrée.");
+        // ❌ Pas de vente, pas de notification
 
         return buildResponseDTO(updatedBl);
     }
+
 
     /**
      * Récupère les BLs pour un lieu de stock spécifique.

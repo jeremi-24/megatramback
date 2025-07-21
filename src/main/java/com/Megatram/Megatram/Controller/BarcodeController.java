@@ -9,6 +9,8 @@ import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource; // ✅ Bon import
@@ -40,6 +42,13 @@ public class BarcodeController {
         this.barcodeService = barcodeService;
     }
 
+
+    @Operation(summary = "Récupérer l'image du code-barres d'un produit")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Image trouvée et retournée"),
+            @ApiResponse(responseCode = "404", description = "Produit ou image du code-barres non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+    })
     @GetMapping("/{produitId}")
     public ResponseEntity<Resource> getBarcodeImage(@PathVariable Long produitId) {
         Produit produit = produitRepository.findById(produitId)
@@ -66,8 +75,13 @@ public class BarcodeController {
         }
     }
 
-
-    @Operation(summary = "Imprimer un PDF")
+    @Operation(summary = "Imprimer un PDF contenant les codes-barres")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "PDF généré avec succès"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé"),
+            @ApiResponse(responseCode = "404", description = "Produit non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur lors de l'impression des codes-barres")
+    })
     @PostMapping(value = "/print", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<Resource> imprimerBarcodes(@RequestBody BarcodePrintRequestDto requestDto) {
         Produit produit = produitRepository.findByNom(requestDto.getProduitNom());
@@ -161,6 +175,91 @@ public class BarcodeController {
 
         return new FileSystemResource(pdfPath.toFile());
     }
+
+
+
+
+//    private Resource genererPdfBarcodes(Produit produit, int quantite) throws Exception {
+//        String codeBarre = produit.getCodeBarre();
+//
+//        if (codeBarre == null || codeBarre.isBlank()) {
+//            throw new RuntimeException("Ce produit n’a pas de code-barres.");
+//        }
+//
+//        Path barcodePath = dossierBarcodes.resolve(codeBarre + ".png");
+//        if (!Files.exists(barcodePath)) {
+//            throw new RuntimeException("Image du code-barres introuvable.");
+//        }
+//
+//        Path pdfPath = dossierBarcodes.resolve("print_" + produit.getId() + ".pdf");
+//
+//        Document document = new Document(PageSize.A4, 36, 35, 15, 5); // marges
+//        PdfWriter.getInstance(document, Files.newOutputStream(pdfPath));
+//        document.open();
+//
+//        Image barcodeImage = Image.getInstance(barcodePath.toAbsolutePath().toString());
+//        barcodeImage.scaleToFit(100f, 60f); // ✅ taille du code-barres
+//
+//        int columns = 3;
+//        int perPage = 18;
+//        int count = 0;
+//
+//        PdfPTable table = createNewTable(columns);
+//
+//        for (int i = 0; i < quantite; i++) {
+//            PdfPTable innerTable = new PdfPTable(1);
+//            innerTable.setWidthPercentage(100);
+//
+//            PdfPCell imageCell = new PdfPCell(barcodeImage, true);
+//            imageCell.setBorder(Rectangle.NO_BORDER);
+//            imageCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+//
+//            PdfPCell nameCell = new PdfPCell(new Phrase(produit.getNom() + " - " + (i + 1)));
+//            nameCell.setBorder(Rectangle.NO_BORDER);
+//            nameCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+//
+//            // ✅ Ajout du prix
+//            String prixFormate = String.format("Prix : %.2f €", produit.getPrix());
+//            PdfPCell priceCell = new PdfPCell(new Phrase(prixFormate));
+//            priceCell.setBorder(Rectangle.NO_BORDER);
+//            priceCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+//
+//            innerTable.addCell(imageCell);
+//            innerTable.addCell(nameCell);
+//            innerTable.addCell(priceCell); // ✅ Nouvelle ligne ajoutée
+//
+//            PdfPCell outerCell = new PdfPCell(innerTable);
+//            outerCell.setFixedHeight(130f);
+//            outerCell.setBorder(Rectangle.NO_BORDER);
+//            outerCell.setPadding(5f);
+//
+//            table.addCell(outerCell);
+//            count++;
+//
+//            if (count % perPage == 0) {
+//                document.add(table);
+//                document.newPage();
+//                table = createNewTable(columns);
+//            }
+//        }
+//
+//        if (count % perPage != 0) {
+//            int reste = perPage - (count % perPage);
+//            for (int i = 0; i < reste; i++) {
+//                PdfPCell empty = new PdfPCell();
+//                empty.setFixedHeight(130f);
+//                empty.setBorder(Rectangle.NO_BORDER);
+//                table.addCell(empty);
+//            }
+//            document.add(table);
+//        }
+//
+//        document.close();
+//
+//        return new FileSystemResource(pdfPath.toFile());
+//    }
+//
+
 
 
     // Méthode utilitaire pour créer une nouvelle table bien configurée

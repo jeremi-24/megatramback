@@ -17,6 +17,11 @@ public class LieuStock {
 
     private String localisation;
 
+    public LieuStock() {}
+
+    public LieuStock(String nom) {
+        this.nom = nom;
+    }
 
     public Long getId() {
         return id;
