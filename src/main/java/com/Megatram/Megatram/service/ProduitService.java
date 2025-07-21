@@ -316,13 +316,15 @@ public class ProduitService {
             Path fichier = barcodeStoragePath.resolve(barcodeText + ".png");
 
             // Générer le code-barres et sauvegarder
-            BitMatrix matrix = new MultiFormatWriter().encode(barcodeText, BarcodeFormat.CODE_128, 300, 100);
+            BitMatrix matrix = new MultiFormatWriter().encode(barcodeText, BarcodeFormat.CODE_128, 200, 150);
             MatrixToImageWriter.writeToPath(matrix, "PNG", fichier);
 
         } catch (Exception e) {
             System.out.println("Erreur code-barres: " + e.getMessage());
         }
     }
+
+
 
     private void deleteBarcodeImage(String barcodeText) {
         if (barcodeText == null || barcodeText.isEmpty()) {
@@ -335,4 +337,35 @@ public class ProduitService {
             System.err.println("ERREUR: Impossible de supprimer l'image du code-barres '" + barcodeText + "': " + e.getMessage());
         }
     }
+
+
+
+
+
+    //RECHERCHE
+    public List<ProduitDto> searchProduits(String searchTerm) {
+        List<Produit> produits = produitRepos.searchProduits(searchTerm);
+        return produits.stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    private ProduitDto mapToDto(Produit produit) {
+        ProduitDto dto = new ProduitDto(produit); // produit est une instance valide
+        dto.setId(produit.getId());
+        dto.setNom(produit.getNom());
+        dto.setRef(produit.getRef());
+        dto.setQte(produit.getQte());
+        dto.setPrix(produit.getPrix());
+        dto.setCodeBarre(produit.getCodeBarre());
+        dto.setCategorieId(produit.getCategorie() != null ? produit.getCategorie().getId() : null);
+        dto.setCategorieNom(produit.getCategorie() != null ? produit.getCategorie().getNom() : null);
+        dto.setLieuStockId(produit.getLieuStock() != null ? produit.getLieuStock().getId() : null);
+        dto.setLieuStockNom(produit.getLieuStock() != null ? produit.getLieuStock().getNom() : null);
+        dto.setQteMin(produit.getQteMin());
+        return dto;
+    }
+
+
+
 }

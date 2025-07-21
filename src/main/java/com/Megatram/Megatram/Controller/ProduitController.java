@@ -2,6 +2,7 @@ package com.Megatram.Megatram.Controller;
 
 import com.Megatram.Megatram.Dto.ProduitDto;
 import com.Megatram.Megatram.Dto.ProduitRequestDTO;
+import com.Megatram.Megatram.Entity.Produit;
 import com.Megatram.Megatram.service.ProduitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/produits") // Convention REST: nom de la ressource au pluriel
@@ -131,20 +133,6 @@ public class ProduitController {
     }
 
 
-//
-//    public ResponseEntity<?> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
-//        if (file.isEmpty() || !file.getOriginalFilename().toLowerCase().endsWith(".xlsx")) {
-//            return ResponseEntity.badRequest().body("Veuillez fournir un fichier Excel (.xlsx) valide.");
-//        }
-//
-//        // On déclare la variable 'produitsImportes'
-//        List<ProduitDto> produitsImportes = produitService.importProduitsFromExcel(file);
-//
-//        // Et on utilise exactement le même nom de variable ici. C'est ici que l'erreur s'était glissée.
-//        return ResponseEntity.ok(produitsImportes);
-//    }
-
-
     @Operation(summary = "Récupère l'image PNG d'un code-barres de produit")
     @GetMapping("/code/{codeBarre}/image")
     public ResponseEntity<Resource> getBarcodeImage(@PathVariable String codeBarre) {
@@ -165,4 +153,15 @@ public class ProduitController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ProduitDto>> searchProduits(@RequestParam("q") String query) {
+        List<ProduitDto> produits = produitService.searchProduits(query);
+        if (produits.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(produits);
+    }
+
 }

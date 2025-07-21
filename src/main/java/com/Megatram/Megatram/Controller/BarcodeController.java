@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/barcode")
@@ -84,11 +85,13 @@ public class BarcodeController {
     })
     @PostMapping(value = "/print", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<Resource> imprimerBarcodes(@RequestBody BarcodePrintRequestDto requestDto) {
-        Produit produit = produitRepository.findByNom(requestDto.getProduitNom());
+        List<Produit> produits = produitRepository.findByNom(requestDto.getProduitNom());
 
-        if (produit == null) {
-            throw new RuntimeException("Produit non trouvé : " + requestDto.getProduitNom());
+        if (produits == null || produits.isEmpty()) {
+            throw new RuntimeException("Aucun produit trouvé avec le nom : " + requestDto.getProduitNom());
         }
+
+        Produit produit = produits.get(0); // ✅ On prend simplement le premier
 
         try {
             Resource pdfFile = genererPdfBarcodes(produit, requestDto.getQuantite());
@@ -99,6 +102,7 @@ public class BarcodeController {
             throw new RuntimeException("Erreur lors de l'impression des codes-barres", e);
         }
     }
+
 
 
 
@@ -129,8 +133,9 @@ public class BarcodeController {
 
         PdfPTable table = createNewTable(columns);
 
+        Font petitePolice = new Font(Font.FontFamily.HELVETICA, 6);
+
         for (int i = 0; i < quantite; i++) {
-            // ✅ Mini-table verticale contenant image + nom
             PdfPTable innerTable = new PdfPTable(1);
             innerTable.setWidthPercentage(100);
 
@@ -138,9 +143,33 @@ public class BarcodeController {
             imageCell.setBorder(Rectangle.NO_BORDER);
             imageCell.setHorizontalAlignment(Element.ALIGN_CENTER);
 
-            PdfPCell nameCell = new PdfPCell(new Phrase(produit.getNom() + " - " + (i + 1)));
+//          JUSTE LE NOM ET LE ID
+//            PdfPCell nameCell = new PdfPCell(new Phrase(produit.getNom() + " - " + (i + 1), petitePolice));
+//            nameCell.setBorder(Rectangle.NO_BORDER);
+//            nameCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+
+
+            // Phrase avec nom + numéro, en petite police
+            Phrase phraseNom = new Phrase(produit.getNom() + " - " + (i + 1), petitePolice);
+
+// Phrase pour le prix, centré et en petite police aussi (tu peux changer la taille si tu veux)
+            Phrase phrasePrix = new Phrase(String.format("%.2f €", produit.getPrix()), petitePolice);
+
+// Pour centrer le texte, on va créer un paragraphe
+            Paragraph paraNom = new Paragraph(phraseNom);
+            paraNom.setAlignment(Element.ALIGN_CENTER);
+
+            Paragraph paraPrix = new Paragraph(phrasePrix);
+            paraPrix.setAlignment(Element.ALIGN_CENTER);
+
+// On crée une cellule PdfPCell vide
+            PdfPCell nameCell = new PdfPCell();
             nameCell.setBorder(Rectangle.NO_BORDER);
             nameCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+
+// On ajoute les deux paragraphes dans la cellule (nom puis prix)
+            nameCell.addElement(paraNom);
+            nameCell.addElement(paraPrix);
 
             innerTable.addCell(imageCell);
             innerTable.addCell(nameCell);
@@ -177,87 +206,12 @@ public class BarcodeController {
     }
 
 
-
-
-//    private Resource genererPdfBarcodes(Produit produit, int quantite) throws Exception {
-//        String codeBarre = produit.getCodeBarre();
-//
-//        if (codeBarre == null || codeBarre.isBlank()) {
-//            throw new RuntimeException("Ce produit n’a pas de code-barres.");
-//        }
-//
-//        Path barcodePath = dossierBarcodes.resolve(codeBarre + ".png");
-//        if (!Files.exists(barcodePath)) {
-//            throw new RuntimeException("Image du code-barres introuvable.");
-//        }
-//
-//        Path pdfPath = dossierBarcodes.resolve("print_" + produit.getId() + ".pdf");
-//
-//        Document document = new Document(PageSize.A4, 36, 35, 15, 5); // marges
-//        PdfWriter.getInstance(document, Files.newOutputStream(pdfPath));
-//        document.open();
-//
-//        Image barcodeImage = Image.getInstance(barcodePath.toAbsolutePath().toString());
-//        barcodeImage.scaleToFit(100f, 60f); // ✅ taille du code-barres
-//
-//        int columns = 3;
-//        int perPage = 18;
-//        int count = 0;
-//
-//        PdfPTable table = createNewTable(columns);
-//
-//        for (int i = 0; i < quantite; i++) {
-//            PdfPTable innerTable = new PdfPTable(1);
-//            innerTable.setWidthPercentage(100);
-//
-//            PdfPCell imageCell = new PdfPCell(barcodeImage, true);
-//            imageCell.setBorder(Rectangle.NO_BORDER);
-//            imageCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-//
-//            PdfPCell nameCell = new PdfPCell(new Phrase(produit.getNom() + " - " + (i + 1)));
-//            nameCell.setBorder(Rectangle.NO_BORDER);
-//            nameCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-//
-//            // ✅ Ajout du prix
-//            String prixFormate = String.format("Prix : %.2f €", produit.getPrix());
-//            PdfPCell priceCell = new PdfPCell(new Phrase(prixFormate));
-//            priceCell.setBorder(Rectangle.NO_BORDER);
-//            priceCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-//
-//            innerTable.addCell(imageCell);
-//            innerTable.addCell(nameCell);
-//            innerTable.addCell(priceCell); // ✅ Nouvelle ligne ajoutée
-//
-//            PdfPCell outerCell = new PdfPCell(innerTable);
-//            outerCell.setFixedHeight(130f);
-//            outerCell.setBorder(Rectangle.NO_BORDER);
-//            outerCell.setPadding(5f);
-//
-//            table.addCell(outerCell);
-//            count++;
-//
-//            if (count % perPage == 0) {
-//                document.add(table);
-//                document.newPage();
-//                table = createNewTable(columns);
-//            }
-//        }
-//
-//        if (count % perPage != 0) {
-//            int reste = perPage - (count % perPage);
-//            for (int i = 0; i < reste; i++) {
-//                PdfPCell empty = new PdfPCell();
-//                empty.setFixedHeight(130f);
-//                empty.setBorder(Rectangle.NO_BORDER);
-//                table.addCell(empty);
-//            }
-//            document.add(table);
-//        }
-//
-//        document.close();
-//
-//        return new FileSystemResource(pdfPath.toFile());
+//    private PdfPTable createNewTable(int columns) {
+//        PdfPTable table = new PdfPTable(columns);
+//        table.setWidthPercentage(100);
+//        return table;
 //    }
+//
 //
 
 
