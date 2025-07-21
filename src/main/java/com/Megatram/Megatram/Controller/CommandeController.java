@@ -129,12 +129,6 @@ public class CommandeController {
     }
 
 
-
-
-
-
-
-
     @Operation(summary = "Récupérer les commandes par ID de client",
             description = "Retourne une liste de toutes les commandes passées par un client spécifique.")
     @ApiResponses(value = {
@@ -149,4 +143,16 @@ public class CommandeController {
         List<CommandeResponseDTO> commandes = commandeService.recupererCommandesParClientId(clientId);
         return ResponseEntity.ok(commandes);
     }
+
+
+
+//    @GetMapping("/search")
+//    public ResponseEntity<List<CommandeResponseDTO>> search(@RequestParam("q") String query) {
+//        List<CommandeResponseDTO> result = commandeService.searchCommandes(query);
+//        if (result.isEmpty()) {
+//            return ResponseEntity.noContent().build();
+//        }
+//        return ResponseEntity.ok(result);
+//    }
+
 }

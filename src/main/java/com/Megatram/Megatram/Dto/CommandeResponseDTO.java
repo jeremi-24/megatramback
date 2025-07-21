@@ -12,8 +12,9 @@ public class CommandeResponseDTO {
     private StatutCommande statut;
     private ClientDto client;
     private LieuStockDTO lieuLivraison;
-    private List<LigneCommandeResponseDTO> lignes;
     private double totalCommande;
+
+    private List<LigneCommandeResponseDTO> lignes;
 
     public Long getId() {
         return id;

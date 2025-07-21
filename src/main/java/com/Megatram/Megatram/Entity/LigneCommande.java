@@ -75,4 +75,6 @@ public class LigneCommande {
     public void setQteVoulu(int qteVoulu) {
         this.qteVoulu = qteVoulu;
     }
+
+
 }

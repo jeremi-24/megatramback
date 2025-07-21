@@ -98,23 +98,6 @@ public class CommandeService {
         return convertToResponseDTO(commande);
     }
 
-//    @Transactional
-//    public ValidationResponse validerCommande(Long id) {
-//        Commande commande = commandeRepository.findById(id)
-//                .orElseThrow(() -> new EntityNotFoundException("Commande non trouvée avec l'ID : " + id));
-//        if (commande.getStatut() != StatutCommande.EN_ATTENTE) {
-//            throw new IllegalStateException("Seule une commande EN_ATTENTE peut être validée.");
-//        }
-//
-//        commande.setStatut(StatutCommande.VALIDEE);
-//        Commande commandeValidee = commandeRepository.save(commande);
-//
-//        FactureResponseDTO factureDto = factureService.genererFacturePourCommande(commandeValidee.getId());
-//        BonLivraisonResponseDTO bonLivraisonDto = bonLivraisonService.genererBonLivraison(commandeValidee.getId());
-//
-//        return new ValidationResponse(convertToResponseDTO(commandeValidee), factureDto, bonLivraisonDto);
-//    }
-
     @Transactional
     public ValidationResponse validerCommande(Long id, String agentEmail) {
         Commande commande = commandeRepository.findById(id)
@@ -236,4 +219,49 @@ public class CommandeService {
         public FactureResponseDTO getFacture() { return facture; }
         public BonLivraisonResponseDTO getBonLivraison() { return bonLivraison; }
     }
+
+
+//    public List<CommandeResponseDTO> searchCommandes(String kw) {
+//        List<Commande> commandes = commandeRepository.searchCommandes(kw.toLowerCase());
+//        return commandes.stream()
+//                .map(c -> {
+//                    CommandeResponseDTO dto = new CommandeResponseDTO();
+//                    dto.setId(c.getId());
+//                    dto.setDate(c.getDate());
+//                    dto.setStatut(c.getStatut());
+//
+//                    // ClientDto
+//                    ClientDto clientDto = new ClientDto();
+//                    clientDto.setNom(c.getClient().getNom());
+//                    // Autres champs à compléter si besoin
+//                    dto.setClient(clientDto);
+//
+//                    // LieuStockDTO
+//                    LieuStockDTO lieuDto = new LieuStockDTO();
+//                    lieuDto.setNom(c.getLieuStock().getNom());
+//                    // Autres champs si nécessaire
+//                    dto.setLieuLivraison(lieuDto);
+//
+//                    // Calcul du total commande
+//                    double total = 0.0;
+//                    if (c.getLignes() != null) {
+//                        total = c.getLignes().stream()
+//                                .mapToDouble(LigneCommande::getTotalCommande)
+//                                .sum();
+//                    }
+//                    dto.setTotalCommande(total);
+//
+//                    return dto;
+//                })
+//                .collect(Collectors.toList());
+//    }
+//
+//
+
+
+
+
+
+
+
 }
