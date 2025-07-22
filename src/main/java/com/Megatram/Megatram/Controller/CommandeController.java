@@ -1,7 +1,10 @@
 package com.Megatram.Megatram.Controller;
 
-import com.Megatram.Megatram.Dto.CommandeRequestDTO;
-import com.Megatram.Megatram.Dto.CommandeResponseDTO;
+import com.Megatram.Megatram.Dto.*;
+import com.Megatram.Megatram.Entity.Client;
+import com.Megatram.Megatram.Entity.Commande;
+import com.Megatram.Megatram.Entity.LieuStock;
+import com.Megatram.Megatram.repository.CommandeRepository;
 import com.Megatram.Megatram.service.CommandeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/commandes")
@@ -25,6 +29,9 @@ public class CommandeController {
 
     @Autowired
     private CommandeService commandeService;
+
+    @Autowired
+    private CommandeRepository commandeRepository;
 
     @Operation(summary = "Créer une nouvelle commande", description = "Crée une nouvelle commande avec un statut 'EN_ATTENTE'. Le lieu de livraison est déterminé automatiquement à partir des produits.")
     @ApiResponses(value = {
@@ -146,13 +153,70 @@ public class CommandeController {
 
 
 
-//    @GetMapping("/search")
-//    public ResponseEntity<List<CommandeResponseDTO>> search(@RequestParam("q") String query) {
-//        List<CommandeResponseDTO> result = commandeService.searchCommandes(query);
-//        if (result.isEmpty()) {
-//            return ResponseEntity.noContent().build();
-//        }
-//        return ResponseEntity.ok(result);
+
+    /*  METHODE DE RECHERCHE */
+    @Operation(summary = "RECHERCHE")
+    @GetMapping("/search")
+    public ResponseEntity<List<CommandeResponseDTO>> searchCommandes(@RequestParam String q) {
+        List<CommandeResponseDTO> dtoList = commandeService.rechercherCommandes(q);
+        return ResponseEntity.ok(dtoList);
+    }
+
+    //    @GetMapping("/search")
+//    public ResponseEntity<List<CommandeResponseDTO>> searchCommandes(@RequestParam String q) {
+//        List<Commande> commandes = commandeRepository.searchCommandes(q);
+//        List<CommandeResponseDTO> dtoList = commandes.stream()
+//                .map(this::convertToResponseDTO)
+//                .collect(Collectors.toList());
+//        return ResponseEntity.ok(dtoList);
 //    }
+//
+//    private CommandeResponseDTO convertToResponseDTO(Commande commande) {
+//        CommandeResponseDTO dto = new CommandeResponseDTO();
+//
+//        dto.setId(commande.getId());
+//        dto.setDate(commande.getDate());
+//        dto.setStatut(commande.getStatut());
+//
+//        // Convertir le client
+//        Client client = commande.getClient();
+//        if (client != null) {
+//            ClientDto clientDto = new ClientDto();
+//            clientDto.setId(client.getId());
+//            clientDto.setNom(client.getNom());
+//            dto.setClient(clientDto);
+//        }
+//
+//        // Convertir le lieu de livraison (lieuStock)
+//        LieuStock lieuStock = commande.getLieuStock();
+//        if (lieuStock != null) {
+//            LieuStockDTO lieuDto = new LieuStockDTO();
+//            lieuDto.setId(lieuStock.getId());
+//            lieuDto.setNom(lieuStock.getNom());
+//            dto.setLieuLivraison(lieuDto);
+//        }
+//
+//        // Convertir les lignes
+//        List<LigneCommandeResponseDTO> ligneDtos = commande.getLignes().stream().map(ligne -> {
+//            LigneCommandeResponseDTO lDto = new LigneCommandeResponseDTO();
+//            lDto.setId(ligne.getId());
+//            lDto.setProduitPrix(ligne.getProduitPrix());
+//            lDto.setQteVoulu(ligne.getQteVoulu());
+//            return lDto;
+//        }).collect(Collectors.toList());
+//
+//        dto.setLignes(ligneDtos);
+//
+//        // Calculer le total de la commande
+//        double total = ligneDtos.stream()
+//                .mapToDouble(l -> l.getProduitPrix() * l.getQteVoulu())
+//                .sum();
+//        dto.setTotalCommande(total);
+//
+//        return dto;
+//    }
+
+
+
 
 }

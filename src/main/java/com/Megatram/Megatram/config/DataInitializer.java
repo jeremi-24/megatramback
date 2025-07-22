@@ -50,12 +50,12 @@ public class DataInitializer implements CommandLineRunner {
         Role adminRole = createRoleIfNotFound("ADMIN", Arrays.asList(PermissionType.values()));
         Role secretaireRole = createRoleIfNotFound("SECRETARIAT", List.of(/* ... */));
         Role magasinierRole = createRoleIfNotFound("MAGASINIER", List.of(/* ... */));
-        Role dgRole = createRoleIfNotFound("DG", List.of(/* ... */));
+        Role dgRole = createRoleIfNotFound("BOUTIQUIER", List.of(/* ... */));
         Role controleurRole = createRoleIfNotFound("CONTROLEUR", List.of(/* ... */));
 
         // --- 2. Création des Utilisateurs et Clients (si nécessaire) ---
         String defaultPassword = "123";
-        createUserAndClient("admin@megatram.com", defaultPassword, adminRole);
+        createUserAndClient("admin@megatram.biz", defaultPassword, adminRole);
 //        createUserAndClient("fille@megatram.com", defaultPassword, secretaireRole);
 //        createUserAndClient("mag1@megatram.com", defaultPassword, magasinierRole);
 //        createUserAndClient("mag2@megatram.com", defaultPassword, magasinierRole);

@@ -20,7 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -125,11 +127,30 @@ public class ProduitController {
 
 
 
-    @Operation(summary = "Importe des produits depuis un fichier Excel (.xlsx)")
+//    @Operation(summary = "Importe des produits depuis un fichier Excel (.xlsx)")
+//    @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<List<ProduitDto>> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
+//        List<ProduitDto> produits = produitService.importProduitsFromExcel(file);
+//        return ResponseEntity.ok(produits);
+//    }
+
+
     @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<List<ProduitDto>> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
-        List<ProduitDto> produits = produitService.importProduitsFromExcel(file);
-        return ResponseEntity.ok(produits);
+    public ResponseEntity<?> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
+        try {
+            List<ProduitDto> produits = produitService.importProduitsFromExcel(file);
+            return ResponseEntity.ok(produits);
+        } catch (IllegalArgumentException e) {
+            // Erreur attendue, colonnes manquantes ou fichier vide
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        } catch (Exception e) {
+            // Erreur non prévue, serveur
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Erreur interne lors de l'import : " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
 

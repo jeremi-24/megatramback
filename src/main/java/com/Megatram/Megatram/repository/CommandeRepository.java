@@ -18,22 +18,15 @@ import java.util.List;
         List<Commande> findByStatut(StatutCommande statut);
 
 
-//    @Query("SELECT c FROM Commande c JOIN c.client cl JOIN c.lieuLivraison l WHERE LOWER(cl.nom) LIKE LOWER(CONCAT('%', :kw, '%')) OR LOWER(cl.prenom) LIKE LOWER(CONCAT('%', :kw, '%')) OR LOWER(l.nom) LIKE LOWER(CONCAT('%', :kw, '%')) OR LOWER(c.statut) LIKE LOWER(CONCAT('%', :kw, '%')) OR STR(c.id) LIKE CONCAT('%', :kw, '%') OR STR(c.totalCommande) LIKE CONCAT('%', :kw, '%') OR STR(c.date) LIKE CONCAT('%', :kw, '%')")
-//    List<Commande> searchCommandes(@Param("kw") String keyword);
+
+    @Query("SELECT c FROM Commande c " +
+            "LEFT JOIN c.client cl " +
+            "LEFT JOIN c.lieuStock ls " +
+            "WHERE LOWER(CAST(c.statut AS string)) LIKE LOWER(CONCAT('%', :term, '%')) " +
+            "OR LOWER(cl.nom) LIKE LOWER(CONCAT('%', :term, '%')) " +
+            "OR LOWER(cl.tel) LIKE LOWER(CONCAT('%', :term, '%')) " +  // remplacé email par tel
+            "OR LOWER(ls.nom) LIKE LOWER(CONCAT('%', :term, '%'))")
+    List<Commande> searchCommandes(@Param("term") String term);
 
 
-
-
-//
-//    @Query("SELECT c FROM Commande c " +
-//            "JOIN c.client cl " +
-//            "JOIN c.lieuLivraison l " +
-//            "WHERE LOWER(cl.nom) LIKE LOWER(CONCAT('%', :kw, '%')) " +
-//            "OR LOWER(cl.prenom) LIKE LOWER(CONCAT('%', :kw, '%')) " +
-//            "OR LOWER(l.nom) LIKE LOWER(CONCAT('%', :kw, '%')) " +
-////            "OR LOWER(c.statut) LIKE LOWER(CONCAT('%', :kw, '%')) " +
-////            "OR STR(c.id) LIKE CONCAT('%', :kw, '%') " +
-////            "OR STR(c.totalCommande) LIKE CONCAT('%', :kw, '%') " +
-//            "OR STR(c.date) LIKE CONCAT('%', :kw, '%')")
-//    List<Commande> searchCommandes(@Param("kw") String kw);
 }

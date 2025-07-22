@@ -270,6 +270,8 @@ public class ProduitService {
 
 
 
+
+
     // Méthodes utilitaires
     private double parseDoubleSafe(String value, double defaultValue) {
         try {

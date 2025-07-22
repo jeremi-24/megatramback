@@ -12,10 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -85,7 +87,6 @@ public class CommandeService {
     }
 
     // --- Les autres méthodes restent similaires mais dépendent de la conversion corrigée ---
-
     public List<CommandeResponseDTO> recupererToutesLesCommandes() {
         return commandeRepository.findAll().stream()
                 .map(this::convertToResponseDTO)
@@ -221,43 +222,58 @@ public class CommandeService {
     }
 
 
-//    public List<CommandeResponseDTO> searchCommandes(String kw) {
-//        List<Commande> commandes = commandeRepository.searchCommandes(kw.toLowerCase());
-//        return commandes.stream()
-//                .map(c -> {
-//                    CommandeResponseDTO dto = new CommandeResponseDTO();
-//                    dto.setId(c.getId());
-//                    dto.setDate(c.getDate());
-//                    dto.setStatut(c.getStatut());
-//
-//                    // ClientDto
-//                    ClientDto clientDto = new ClientDto();
-//                    clientDto.setNom(c.getClient().getNom());
-//                    // Autres champs à compléter si besoin
-//                    dto.setClient(clientDto);
-//
-//                    // LieuStockDTO
-//                    LieuStockDTO lieuDto = new LieuStockDTO();
-//                    lieuDto.setNom(c.getLieuStock().getNom());
-//                    // Autres champs si nécessaire
-//                    dto.setLieuLivraison(lieuDto);
-//
-//                    // Calcul du total commande
-//                    double total = 0.0;
-//                    if (c.getLignes() != null) {
-//                        total = c.getLignes().stream()
-//                                .mapToDouble(LigneCommande::getTotalCommande)
-//                                .sum();
-//                    }
-//                    dto.setTotalCommande(total);
-//
-//                    return dto;
-//                })
-//                .collect(Collectors.toList());
-//    }
-//
-//
 
+    public List<CommandeResponseDTO> rechercherCommandes(String query) {
+        List<Commande> commandes = commandeRepository.searchCommandes(query);
+        return commandes.stream()
+                .map(this::convertToResponseDtO)
+                .collect(Collectors.toList());
+    }
+
+    private CommandeResponseDTO convertToResponseDtO(Commande commande) {
+        CommandeResponseDTO dto = new CommandeResponseDTO();
+
+        dto.setId(commande.getId());
+        dto.setDate(commande.getDate());
+        dto.setStatut(commande.getStatut());
+
+        // Convertir le client
+        Client client = commande.getClient();
+        if (client != null) {
+            ClientDto clientDto = new ClientDto();
+            clientDto.setId(client.getId());
+            clientDto.setNom(client.getNom());
+            dto.setClient(clientDto);
+        }
+
+        // Convertir le lieu de livraison
+        LieuStock lieuStock = commande.getLieuStock();
+        if (lieuStock != null) {
+            LieuStockDTO lieuDto = new LieuStockDTO();
+            lieuDto.setId(lieuStock.getId());
+            lieuDto.setNom(lieuStock.getNom());
+            dto.setLieuLivraison(lieuDto);
+        }
+
+        // Convertir les lignes
+        List<LigneCommandeResponseDTO> ligneDtos = commande.getLignes().stream().map(ligne -> {
+            LigneCommandeResponseDTO lDto = new LigneCommandeResponseDTO();
+            lDto.setId(ligne.getId());
+            lDto.setProduitPrix(ligne.getProduitPrix());
+            lDto.setQteVoulu(ligne.getQteVoulu());
+            return lDto;
+        }).collect(Collectors.toList());
+
+        dto.setLignes(ligneDtos);
+
+        // Calculer le total
+        double total = ligneDtos.stream()
+                .mapToDouble(l -> l.getProduitPrix() * l.getQteVoulu())
+                .sum();
+        dto.setTotalCommande(total);
+
+        return dto;
+    }
 
 
 
