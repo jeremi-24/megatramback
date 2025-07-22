@@ -1,5 +1,6 @@
 package com.Megatram.Megatram.Controller;
 
+import com.Megatram.Megatram.Dto.AssignationProduitsDTO;
 import com.Megatram.Megatram.Dto.ProduitDto;
 import com.Megatram.Megatram.Dto.ProduitRequestDTO;
 import com.Megatram.Megatram.Entity.Produit;
@@ -57,6 +58,26 @@ public class ProduitController {
         ProduitDto produitMisAJour = produitService.updateProduit(id, requestDto);
         return ResponseEntity.ok(produitMisAJour);
     }
+
+
+
+
+
+    @PutMapping("/assignation")
+    public ResponseEntity<String> assignerCategorieEtLieuStock(@RequestBody AssignationProduitsDTO dto) {
+            try {
+                produitService.assignerCategorieEtEntrepot(dto);
+                return ResponseEntity.ok("Assignation effectuée avec succès.");
+            } catch (EntityNotFoundException | IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Une erreur est survenue lors de l'assignation.");
+            }
+        }
+
+
+
 
     @Operation(summary = "Récupère la liste de tous les produits")
     @GetMapping

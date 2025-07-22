@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -72,6 +73,23 @@ public class CommandeController {
         CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "annuler une commande")
+    @PutMapping("/{id}/annuler")
+    public ResponseEntity<?> annulerCommande(@PathVariable Long id) {
+        try {
+            commandeService.annulerCommande(id);
+            return ResponseEntity.ok().build();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur interne du serveur");
+        }
+    }
+
+
 
 
     @Operation(summary = "Modifier une commande existante", description = "Met à jour une commande 'EN ATTENTE'.")

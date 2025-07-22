@@ -1,5 +1,6 @@
 package com.Megatram.Megatram.service;
 
+import com.Megatram.Megatram.Dto.AssignationProduitsDTO;
 import com.Megatram.Megatram.Dto.ProduitRequestDTO;
 import com.Megatram.Megatram.Dto.ProduitDto;
 import com.Megatram.Megatram.Entity.Categorie;
@@ -368,6 +369,46 @@ public class ProduitService {
         return dto;
     }
 
+
+
+    @Transactional
+    public void assignerCategorieEtEntrepot(AssignationProduitsDTO dto) {
+        // 1. Récupérer la liste des produits concernés
+        List<Produit> produits = produitRepos.findAllById(dto.getProduitIds());
+
+        if (produits.isEmpty()) {
+            throw new IllegalArgumentException("Aucun produit trouvé avec les IDs fournis.");
+        }
+
+        // 2. Initialiser les objets à affecter (catégorie et lieu de stock)
+        Categorie categorie = null;
+        LieuStock lieuStock = null;
+
+        // 3. Récupération de la catégorie si précisée
+        if (dto.getCategorieId() != null) {
+            categorie = categorieRep.findById(dto.getCategorieId())
+                    .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
+        }
+
+        // 4. Récupération du lieu de stock si précisé
+        if (dto.getLieuStockId() != null) {
+            lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
+                    .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
+        }
+
+        // 5. Mise à jour des produits
+        for (Produit produit : produits) {
+            if (categorie != null) {
+                produit.setCategorie(categorie);
+            }
+            if (lieuStock != null) {
+                produit.setLieuStock(lieuStock);
+            }
+        }
+
+        // 6. Sauvegarde en base
+        produitRepos.saveAll(produits);
+    }
 
 
 }

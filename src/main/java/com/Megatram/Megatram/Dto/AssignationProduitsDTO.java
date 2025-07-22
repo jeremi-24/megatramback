@@ -5,7 +5,7 @@ import java.util.List;
 public class AssignationProduitsDTO {
     private List<Long> produitIds;
     private Long categorieId;
-    private Long entrepotId;
+    private Long lieuStockId;
 
     // Getters et setters
     public List<Long> getProduitIds() {
@@ -24,11 +24,11 @@ public class AssignationProduitsDTO {
         this.categorieId = categorieId;
     }
 
-    public Long getEntrepotId() {
-        return entrepotId;
+    public Long getLieuStockId() {
+        return lieuStockId;
     }
 
-    public void setEntrepotId(Long entrepotId) {
-        this.entrepotId = entrepotId;
+    public void setLieuStockId(Long lieuStockId) {
+        this.lieuStockId = lieuStockId;
     }
 }

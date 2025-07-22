@@ -132,6 +132,21 @@ public class CommandeService {
         return new ValidationResponse(convertToResponseDTO(commandeValidee), factureDto, bonLivraisonValide);
     }
 
+    //annulation de la commnade
+    @Transactional
+    public void annulerCommande(Long id) {
+        Commande commande = commandeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Commande introuvable avec l'ID : " + id));
+
+        if (commande.getStatut() != StatutCommande.EN_ATTENTE) {
+            throw new IllegalStateException("Seules les commandes EN_ATTENTE peuvent être annulées.");
+        }
+
+        commande.setStatut(StatutCommande.ANNULEE);
+        commandeRepository.save(commande);
+    }
+
+
     @Transactional
     public CommandeResponseDTO modifierCommande(Long id, CommandeRequestDTO requestDTO) {
         // La logique de modification doit aussi ré-évaluer le lieu de stock
