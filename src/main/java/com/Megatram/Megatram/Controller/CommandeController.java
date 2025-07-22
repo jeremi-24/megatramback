@@ -50,45 +50,7 @@ public class CommandeController {
 
     // ... Les autres endpoints (GET, POST valider, PUT) restent fonctionnellement les mêmes mais bénéficieront de la correction ...
 
-//    @Operation(summary = "Récupérer toutes les commandes", description = "Retourne une liste de toutes les commandes existantes.")
-//    @GetMapping
-//    public ResponseEntity<List<CommandeResponseDTO>> recupererLesCommandes() {
-//        List<CommandeResponseDTO> commandes = commandeService.recupererToutesLesCommandes();
-//        return ResponseEntity.ok(commandes);
-//    }
-//
-//    @Operation(summary = "Récupérer une commande par son ID", description = "Retourne les détails d'une commande spécifique.")
-//    @GetMapping("/{id}")
-//    public ResponseEntity<CommandeResponseDTO> recupererCommandeParId(@PathVariable Long id) {
-//        CommandeResponseDTO commande = commandeService.recupererCommandeParId(id);
-//        return ResponseEntity.ok(commande);
-//    }
-//
-//
-//
-//    @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
-//    @PostMapping("/{id}/valider")
-//    public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
-//        CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
-//        return ResponseEntity.ok(response);
-//    }
-//
-//
-//    @Operation(summary = "Modifier une commande existante", description = "Met à jour une commande 'EN ATTENTE'.")
-//    @PutMapping("/{id}")
-//    public ResponseEntity<CommandeResponseDTO> modifierCommande(@PathVariable Long id, @RequestBody CommandeRequestDTO commandeRequestDTO) {
-//        CommandeResponseDTO commandeModifiee = commandeService.modifierCommande(id, commandeRequestDTO);
-//        return ResponseEntity.ok(commandeModifiee);
-//    }
-
-
-
-
     @Operation(summary = "Récupérer toutes les commandes", description = "Retourne une liste de toutes les commandes existantes.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Liste des commandes récupérée avec succès"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
-    })
     @GetMapping
     public ResponseEntity<List<CommandeResponseDTO>> recupererLesCommandes() {
         List<CommandeResponseDTO> commandes = commandeService.recupererToutesLesCommandes();
@@ -96,44 +58,32 @@ public class CommandeController {
     }
 
     @Operation(summary = "Récupérer une commande par son ID", description = "Retourne les détails d'une commande spécifique.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Commande trouvée avec succès"),
-            @ApiResponse(responseCode = "404", description = "Commande introuvable avec l'identifiant fourni"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
-    })
     @GetMapping("/{id}")
     public ResponseEntity<CommandeResponseDTO> recupererCommandeParId(@PathVariable Long id) {
         CommandeResponseDTO commande = commandeService.recupererCommandeParId(id);
         return ResponseEntity.ok(commande);
     }
 
+
+
     @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Commande validée avec succès"),
-            @ApiResponse(responseCode = "400", description = "Validation impossible : commande non en attente ou données invalides"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé : vous n'avez pas les droits nécessaires"),
-            @ApiResponse(responseCode = "404", description = "Commande introuvable avec l'identifiant fourni"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
-    })
     @PostMapping("/{id}/valider")
     public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
         CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
         return ResponseEntity.ok(response);
     }
 
+
     @Operation(summary = "Modifier une commande existante", description = "Met à jour une commande 'EN ATTENTE'.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Commande mise à jour avec succès"),
-            @ApiResponse(responseCode = "400", description = "Données invalides ou commande non modifiable"),
-            @ApiResponse(responseCode = "403", description = "Accès refusé : vous n'avez pas les droits nécessaires"),
-            @ApiResponse(responseCode = "404", description = "Commande introuvable avec l'identifiant fourni"),
-            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
-    })
     @PutMapping("/{id}")
     public ResponseEntity<CommandeResponseDTO> modifierCommande(@PathVariable Long id, @RequestBody CommandeRequestDTO commandeRequestDTO) {
         CommandeResponseDTO commandeModifiee = commandeService.modifierCommande(id, commandeRequestDTO);
         return ResponseEntity.ok(commandeModifiee);
     }
+
+
+
+
 
 
     @Operation(summary = "Récupérer les commandes par ID de client",
