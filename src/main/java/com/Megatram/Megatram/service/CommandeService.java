@@ -37,13 +37,17 @@ public class CommandeService {
 
     @Transactional
     public CommandeResponseDTO creerCommande(CommandeRequestDTO requestDTO) {
-        Client client = clientRepository.findById(requestDTO.getClientId())
+        //  Recherche du client en base via son ID fourni dans la requête
+
+                Client client = clientRepository.findById(requestDTO.getClientId())
                 .orElseThrow(() -> new EntityNotFoundException("Client non trouvé avec l'ID : " + requestDTO.getClientId()));
 
+        // Vérification que la commande contient au moins une ligne
         if (requestDTO.getLignes() == null || requestDTO.getLignes().isEmpty()) {
             throw new IllegalArgumentException("Une commande ne peut pas être créée sans lignes de commande.");
         }
 
+        // Création d'une nouvelle commande
         Commande commande = new Commande();
         commande.setClient(client);
         commande.setDate(LocalDateTime.now());
@@ -85,6 +89,9 @@ public class CommandeService {
         Commande savedCommande = commandeRepository.save(commande);
         return convertToResponseDTO(savedCommande);
     }
+
+
+
 
     // --- Les autres méthodes restent similaires mais dépendent de la conversion corrigée ---
     public List<CommandeResponseDTO> recupererToutesLesCommandes() {
