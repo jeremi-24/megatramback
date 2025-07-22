@@ -24,7 +24,7 @@ public class Commande {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 50)
-    private StatutCommande statut; // EN_ATTENTE, VALIDEE, ANNULEE
+    private StatutCommande statut;
 
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LigneCommande> lignes;
