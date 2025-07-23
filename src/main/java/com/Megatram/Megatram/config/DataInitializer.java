@@ -47,19 +47,77 @@ public class DataInitializer implements CommandLineRunner {
         // ON A SUPPRIMÉ LE 'if (roleRepository.count() > 0) return;'
 
         // --- 1. Création des Rôles (si nécessaire) ---
+
+                    //A-ADMIN
         Role adminRole = createRoleIfNotFound("ADMIN", Arrays.asList(PermissionType.values()));
-        Role secretaireRole = createRoleIfNotFound("SECRETARIAT", List.of(/* ... */));
+
+
+
+                 //B-SECRETAIRE
+        Role secretaireRole = createRoleIfNotFound("SECRETARIAT", List.of(
+                // --- Produits ---
+                PermissionType.PRODUIT_CREATE,
+                PermissionType.PRODUIT_READ,
+                PermissionType.PRODUIT_UPDATE,
+                PermissionType.PRODUIT_DELETE,
+                PermissionType.PRODUIT_IMPORT,
+
+                // --- Commandes ---
+                PermissionType.COMMANDE_CREATE,
+                PermissionType.COMMANDE_READ,
+                PermissionType.COMMANDE_VALIDATE,
+                PermissionType.COMMANDE_CANCEL,
+
+                // --- Livraisons ---
+                PermissionType.LIVRAISON_GENERATE,
+                PermissionType.LIVRAISON_READ,
+                PermissionType.LIVRAISON_VALIDATE,
+
+                // --- Ventes & Factures ---
+                PermissionType.FACTURE_GENERATE,
+                PermissionType.VENTE_READ
+        ));
+
+            //C- MAGASINNIER
+
         Role magasinierRole = createRoleIfNotFound("MAGASINIER", List.of(/* ... */));
-        Role dgRole = createRoleIfNotFound("BOUTIQUIER", List.of(/* ... */));
-        Role controleurRole = createRoleIfNotFound("CONTROLEUR", List.of(/* ... */));
+
+
+              //D- BOUTIQUIER
+        Role boutiquierRole = createRoleIfNotFound("BOUTIQUIER", List.of(
+                // --- Gestion des Produits ---
+                PermissionType.PRODUIT_CREATE,
+                PermissionType.PRODUIT_READ,
+
+                // --- Gestion des Commandes ---
+                PermissionType.COMMANDE_CREATE,
+                PermissionType.COMMANDE_READ
+        ));
+
+            //E- CONTROLLEUR
+        Role controleurRole = createRoleIfNotFound("CONTROLEUR", Arrays.asList(PermissionType.values()));
+//                // --- Produits ---
+//                PermissionType.PRODUIT_CREATE,
+//                PermissionType.PRODUIT_READ,
+//                PermissionType.PRODUIT_UPDATE,
+//                PermissionType.PRODUIT_DELETE,
+//                PermissionType.PRODUIT_IMPORT,
+//
+//                // --- Inventaire & Réapprovisionnement ---
+//                PermissionType.INVENTAIRE_MANAGE,
+//                PermissionType.REAPPRO_MANAGE,
+//
+//                // --- Rapports ---
+//                PermissionType.REPORT_VIEW
+//        ));
 
         // --- 2. Création des Utilisateurs et Clients (si nécessaire) ---
         String defaultPassword = "123";
         createUserAndClient("admin@megatram.biz", defaultPassword, adminRole);
-//        createUserAndClient("fille@megatram.com", defaultPassword, secretaireRole);
-//        createUserAndClient("mag1@megatram.com", defaultPassword, magasinierRole);
+//        createUserAndClient("secretaire@megatram.biz", defaultPassword, secretaireRole);
+//        createUserAndClient("mag@megatram.biz", defaultPassword, magasinierRole);
 //        createUserAndClient("mag2@megatram.com", defaultPassword, magasinierRole);
-//        createUserAndClient("dg@megatram.com", defaultPassword, dgRole);
+//        createUserAndClient("boutiquier@megatram.com", defaultPassword, boutiquierRole);
 //        createUserAndClient("rahim@megatram.com", defaultPassword, controleurRole);
     }
 

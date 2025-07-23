@@ -35,6 +35,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/ws-notifications/**",
                                 "/swagger-resources/**",
+                                "/api/livraisons",
+                                "/api/livraisons/**" ,// 👈 ajouté ici
+
                                 "/webjars/**",
                                 "/error"
                         ).permitAll()
@@ -42,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/save").hasRole("ADMIN")   // Seul ADMIN peut créer utilisateurs
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")    // ADMIN uniquement
                         .requestMatchers("/api/user/**").hasAnyRole("ADMIN", "USER") // ADMIN et USER
+                        .requestMatchers("/api/livraisons", "/api/livraisons/**").permitAll()
 
                         .anyRequest().authenticated()
                 )

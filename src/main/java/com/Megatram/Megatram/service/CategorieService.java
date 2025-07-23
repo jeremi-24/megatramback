@@ -78,35 +78,37 @@ public class CategorieService {
     }
 
 
-    public List<Categorie> importerCategoriesDepuisExcel(MultipartFile file) {
-        List<Categorie> categories = new ArrayList<>();
+//    public List<Categorie> importerCategoriesDepuisExcel(MultipartFile file) {
+//        List<Categorie> categories = new ArrayList<>();
+//
+//        try (InputStream inputStream = file.getInputStream();
+//             Workbook workbook = new XSSFWorkbook(inputStream)) {
+//
+//            Sheet sheet = workbook.getSheetAt(0); // Première feuille
+//            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // à partir de ligne 1 (0 = entêtes)
+//                Row row = sheet.getRow(i);
+//                if (row == null) continue;
+//
+//                Cell nomCell = row.getCell(0); // première colonne : nom
+//                if (nomCell == null || nomCell.getCellType() != CellType.STRING) continue;
+//
+//                String nom = nomCell.getStringCellValue().trim();
+//                if (!nom.isEmpty()) {
+//                    Categorie cat = new Categorie();
+//                    cat.setNom(nom);
+//                    categories.add(cat);
+//                }
+//            }
+//
+//            categorieRepository.saveAll(categories);
+//        } catch (IOException e) {
+//            throw new RuntimeException("Erreur lors de la lecture du fichier Excel : " + e.getMessage());
+//        }
+//
+//        return categories;
+//    }
+//
 
-        try (InputStream inputStream = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(inputStream)) {
-
-            Sheet sheet = workbook.getSheetAt(0); // Première feuille
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // à partir de ligne 1 (0 = entêtes)
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
-
-                Cell nomCell = row.getCell(0); // première colonne : nom
-                if (nomCell == null || nomCell.getCellType() != CellType.STRING) continue;
-
-                String nom = nomCell.getStringCellValue().trim();
-                if (!nom.isEmpty()) {
-                    Categorie cat = new Categorie();
-                    cat.setNom(nom);
-                    categories.add(cat);
-                }
-            }
-
-            categorieRepository.saveAll(categories);
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur lors de la lecture du fichier Excel : " + e.getMessage());
-        }
-
-        return categories;
-    }
     public Long getCategorieIdByNom(String nom) {
         return categorieRepository.findByNom(nom)
                 .map(Categorie::getId)

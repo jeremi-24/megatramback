@@ -1,5 +1,6 @@
 package com.Megatram.Megatram.Dto;
 
+import com.Megatram.Megatram.enums.BonLivraisonStatus;
 import com.Megatram.Megatram.enums.StatutCommande;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ public class CommandeResponseDTO {
     private List<LigneCommandeResponseDTO> lignes;
 
 
+//    private BonLivraisonStatus statutBonLivraison;
 
     public Long getId() {
         return id;
@@ -72,5 +74,8 @@ public class CommandeResponseDTO {
 
     public void setTotalCommande(double totalCommande) {
         this.totalCommande = totalCommande;
+    }
+
+    public void setStatutBonLivraison(BonLivraisonStatus statut) {
     }
 }

@@ -8,7 +8,6 @@ import com.Megatram.Megatram.service.UtilisateurService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
@@ -19,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal; // <-- N'oubliez pas cet import
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,13 +68,6 @@ public class BonLivraisonController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
-
-
-
-
-
-
 
     @PutMapping("/{id}/valider1")
     @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
@@ -135,14 +126,6 @@ public class BonLivraisonController {
 
         return ResponseEntity.ok(bons);
     }
-
-
-
-
-
-
-
-
 
 
     @Operation(

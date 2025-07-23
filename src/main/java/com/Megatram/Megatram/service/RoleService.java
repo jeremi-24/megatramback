@@ -3,6 +3,7 @@ package com.Megatram.Megatram.service;
 import com.Megatram.Megatram.Dto.*;
 import com.Megatram.Megatram.Entity.Permission;
 import com.Megatram.Megatram.Entity.Role;
+import com.Megatram.Megatram.enums.PermissionType;
 import com.Megatram.Megatram.repository.PermissionRepository;
 import com.Megatram.Megatram.repository.RoleRepository;
 import com.Megatram.Megatram.repository.UtilisateurRepository;
@@ -55,6 +56,9 @@ public class RoleService {
         savedRole.setPermissions(permissions);
         return buildRoleDetailResponseDTO(savedRole);
     }
+
+
+
 
     /**
      * Récupère la liste de tous les rôles avec leurs permissions détaillées.

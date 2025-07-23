@@ -64,7 +64,7 @@ public class BonLivraisonService {
         BonLivraison bl = new BonLivraison();
         bl.setCommande(commande);
         bl.setDateLivraison(LocalDateTime.now());
-        bl.setStatut(BonLivraisonStatus.EN_ATTENTE);
+        bl.setStatut(BonLivraisonStatus.A_LIVRER); //
 
         // 2. Créer les lignes de livraison et établir la relation bidirectionnelle
         List<LigneLivraison> lignes = new ArrayList<>();
@@ -140,25 +140,6 @@ public class BonLivraisonService {
 
 
 
-//    public BonLivraisonResponseDTO validerETAttendre(Long bonLivraisonId, String agentEmail) {
-//        BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
-//                .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
-//
-//
-//        // Suppression de la décrémentation de stock (logique enlevée)
-//
-//        // Mise à jour du statut : passer à A_LIVRER
-//        bl.setStatut(BonLivraisonStatus.A_LIVRER);
-//        BonLivraison updatedBl = bonLivraisonRepository.save(bl);
-//
-//        // Tu peux enlever la création de vente et la notification si ce n’est pas encore livré
-//        // venteService.creerVenteDepuisBonLivraison(updatedBl, agentEmail);
-//        // notificationService.envoyerNotification("/topic/secretariat", "La livraison N°" + updatedBl.getId() + " est prête à être livrée.");
-//
-//        return buildResponseDTO(updatedBl);
-//    }
-
-
     public BonLivraisonResponseDTO validerETAttendre(Long bonLivraisonId, String agentEmail) {
         BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
                 .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
@@ -186,6 +167,18 @@ public class BonLivraisonService {
                 .map(this::buildResponseDTO)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<BonLivraisonResponseDTO> getBonsLivraisonParLieuAvecStatutALivrer(Long lieuId) {
+        return bonLivraisonRepository.findByCommande_LieuStock_Id(lieuId).stream()
+                .map(bon -> {
+                    BonLivraisonResponseDTO dto = buildResponseDTO(bon);
+                    dto.setStatut(BonLivraisonStatus.A_LIVRER);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
 
     private BonLivraisonResponseDTO buildResponseDTO(BonLivraison bon) {
         BonLivraisonResponseDTO dto = new BonLivraisonResponseDTO();

@@ -16,7 +16,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -93,6 +95,7 @@ public class CommandeService {
 
 
 
+
     // --- Les autres méthodes restent similaires mais dépendent de la conversion corrigée ---
     public List<CommandeResponseDTO> recupererToutesLesCommandes() {
         return commandeRepository.findAll().stream()
@@ -106,6 +109,8 @@ public class CommandeService {
         return convertToResponseDTO(commande);
     }
 
+
+
     @Transactional
     public ValidationResponse validerCommande(Long id, String agentEmail) {
         Commande commande = commandeRepository.findById(id)
@@ -115,21 +120,60 @@ public class CommandeService {
             throw new IllegalStateException("Seule une commande EN_ATTENTE peut être validée.");
         }
 
-        // 1. Valider la commande
         commande.setStatut(StatutCommande.VALIDEE);
         Commande commandeValidee = commandeRepository.save(commande);
 
-        // 2. Générer la facture
         FactureResponseDTO factureDto = factureService.genererFacturePourCommande(commandeValidee.getId());
 
-        // 3. Générer le bon de livraison
         BonLivraisonResponseDTO bonLivraisonDto = bonLivraisonService.genererBonLivraison(commandeValidee.getId());
 
-        // 4. Valider automatiquement le bon de livraison
-        BonLivraisonResponseDTO bonLivraisonValide = bonLivraisonService.validerEtLivrer(bonLivraisonDto.getId(), agentEmail);
+        BonLivraisonResponseDTO bonLivraisonValide = bonLivraisonService.validerETAttendre(bonLivraisonDto.getId(), agentEmail);
 
-        // 5. Retourner la réponse complète
-        return new ValidationResponse(convertToResponseDTO(commandeValidee), factureDto, bonLivraisonValide);
+        return new ValidationResponse(
+                convertToResponseDTOAvecBonLivraison(commandeValidee, bonLivraisonValide),
+                factureDto,
+                bonLivraisonValide
+        );
+    }
+
+
+    private CommandeResponseDTO convertToResponseDTOAvecBonLivraison(Commande commande, BonLivraisonResponseDTO bonLivraison) {
+        CommandeResponseDTO dto = new CommandeResponseDTO();
+        dto.setId(commande.getId());
+        dto.setDate(commande.getDate());
+        dto.setStatut(commande.getStatut());
+
+        if (commande.getClient() != null) {
+            dto.setClient(new ClientDto(commande.getClient()));
+        }
+        if (commande.getLieuStock() != null) {
+            dto.setLieuLivraison(new LieuStockDTO(commande.getLieuStock()));
+        }
+
+        List<Long> produitIds = commande.getLignes().stream()
+                .map(LigneCommande::getProduitId)
+                .collect(Collectors.toList());
+
+        List<Produit> produits = produitRepos.findAllById(produitIds);
+
+        Map<Long, Produit> produitMap = produits.stream()
+                .collect(Collectors.toMap(Produit::getId, Function.identity()));
+
+        List<LigneCommandeResponseDTO> lignesDto = commande.getLignes().stream()
+                .map(ligne -> new LigneCommandeResponseDTO(ligne, produitMap.get(ligne.getProduitId())))
+                .collect(Collectors.toList());
+
+        dto.setLignes(lignesDto);
+
+        dto.setTotalCommande(lignesDto.stream()
+                .mapToDouble(LigneCommandeResponseDTO::getTotalLigne)
+                .sum());
+
+        if (bonLivraison != null) {
+            dto.setStatutBonLivraison(bonLivraison.getStatut());
+        }
+
+        return dto;
     }
 
     //annulation de la commnade
@@ -216,8 +260,14 @@ public class CommandeService {
         dto.setLignes(lignesDto);
         dto.setTotalCommande(lignesDto.stream().mapToDouble(LigneCommandeResponseDTO::getTotalLigne).sum());
 
+
+
         return dto;
     }
+
+
+
+
 
 
     @Transactional(readOnly = true) // C'est une opération de lecture seule, c'est une bonne pratique de le spécifier
