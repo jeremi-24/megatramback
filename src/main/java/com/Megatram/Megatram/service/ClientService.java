@@ -113,7 +113,7 @@ public class ClientService {
         }
 
         String roleName = utilisateur.getRole().getNom();
-        if (!roleName.equalsIgnoreCase("ADMIN") && !roleName.equalsIgnoreCase("DG")) {
+        if (!roleName.equalsIgnoreCase("ADMIN")  && !roleName.equalsIgnoreCase("SECRETARIAT")) {
             throw new AccessDeniedException("Accès refusé : rôle insuffisant.");
         }
 

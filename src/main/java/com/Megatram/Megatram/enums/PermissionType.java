@@ -35,6 +35,9 @@ public enum PermissionType {
     // --- Gestion des Rapports (DG / Contrôleur) ---
     REPORT_VIEW("Voir les rapports de performance");
 
+
+
+
     private final String description;
 
     PermissionType(String description) {

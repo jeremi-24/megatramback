@@ -17,6 +17,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -35,6 +36,7 @@ public class CommandeController {
     private CommandeRepository commandeRepository;
 
     @Operation(summary = "Créer une nouvelle commande", description = "Crée une nouvelle commande avec un statut 'EN_ATTENTE'. Le lieu de livraison est déterminé automatiquement à partir des produits.")
+    @PreAuthorize("hasAuthority('COMMANDE_CREATE')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Commande créée avec succès",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = CommandeResponseDTO.class))),
@@ -51,6 +53,7 @@ public class CommandeController {
 
     // ... Les autres endpoints (GET, POST valider, PUT) restent fonctionnellement les mêmes mais bénéficieront de la correction ...
 
+    @PreAuthorize("hasAuthority('COMMANDE_READ')")
     @Operation(summary = "Récupérer toutes les commandes", description = "Retourne une liste de toutes les commandes existantes.")
     @GetMapping
     public ResponseEntity<List<CommandeResponseDTO>> recupererLesCommandes() {
@@ -58,6 +61,7 @@ public class CommandeController {
         return ResponseEntity.ok(commandes);
     }
 
+    @PreAuthorize("hasAuthority('COMMANDE_READ')")
     @Operation(summary = "Récupérer une commande par son ID", description = "Retourne les détails d'une commande spécifique.")
     @GetMapping("/{id}")
     public ResponseEntity<CommandeResponseDTO> recupererCommandeParId(@PathVariable Long id) {
@@ -66,7 +70,7 @@ public class CommandeController {
     }
 
 
-
+    @PreAuthorize("hasAuthority('COMMANDE_VALIDATE')")
     @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
     @PostMapping("/{id}/valider")
     public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
@@ -74,6 +78,7 @@ public class CommandeController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAuthority('COMMANDE_CANCEL')")
     @Operation(summary = "annuler une commande")
     @PutMapping("/{id}/annuler")
     public ResponseEntity<?> annulerCommande(@PathVariable Long id) {
@@ -92,6 +97,7 @@ public class CommandeController {
 
 
 
+    @PreAuthorize("hasAuthority('COMMANDE_UPDATE')")
     @Operation(summary = "Modifier une commande existante", description = "Met à jour une commande 'EN ATTENTE'.")
     @PutMapping("/{id}")
     public ResponseEntity<CommandeResponseDTO> modifierCommande(@PathVariable Long id, @RequestBody CommandeRequestDTO commandeRequestDTO) {

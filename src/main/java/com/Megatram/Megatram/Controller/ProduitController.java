@@ -42,7 +42,8 @@ public class ProduitController {
 
     @Operation(summary = "Crée un nouveau produit")
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PRODUIT_CREATE')")
     public ResponseEntity<ProduitDto> createProduit(@RequestBody ProduitRequestDTO requestDto) {
         // On envoie le DTO de requête (sécurisé) au service
         ProduitDto nouveauProduit = produitService.createProduit(requestDto);
@@ -52,7 +53,8 @@ public class ProduitController {
 
     @Operation(summary = "Met à jour un produit existant par son ID")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PRODUIT_UPDATE')")
     public ResponseEntity<ProduitDto> updateProduit(@PathVariable Long id, @RequestBody ProduitRequestDTO requestDto) {
         // Le service gère la logique de mise à jour
         ProduitDto produitMisAJour = produitService.updateProduit(id, requestDto);
@@ -64,6 +66,7 @@ public class ProduitController {
 
 
     @PutMapping("/assignation")
+    @PreAuthorize("hasAuthority('PRODUIT_UPDATE')")
     public ResponseEntity<String> assignerCategorieEtLieuStock(@RequestBody AssignationProduitsDTO dto) {
             try {
                 produitService.assignerCategorieEtEntrepot(dto);
@@ -78,7 +81,7 @@ public class ProduitController {
 
 
 
-
+    @PreAuthorize("hasAuthority('PRODUIT_READ')")
     @Operation(summary = "Récupère la liste de tous les produits")
     @GetMapping
     public ResponseEntity<List<ProduitDto>> getAllProduits() {
@@ -88,6 +91,7 @@ public class ProduitController {
 
     @Operation(summary = "Récupère un produit par son ID")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('PRODUIT_READ')")
     public ResponseEntity<ProduitDto> getProduitById(@PathVariable Long id) {
         try {
             ProduitDto produit = produitService.getProduitById(id);
@@ -99,6 +103,7 @@ public class ProduitController {
 
     @Operation(summary = "Recherche un produit par son code-barres")
     @GetMapping("/code/{codeBarre}")
+    @PreAuthorize("hasAuthority('PRODUIT_READ')")
     public ResponseEntity<?> getProduitByCodeBarre(@PathVariable String codeBarre) {
         try {
             // Cette méthode doit être ajoutée dans votre classe ProduitService
