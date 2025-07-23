@@ -55,7 +55,8 @@ public class BonLivraisonController {
 
     @Operation(summary = "Valide une livraison et décrémente le stock (réservé Magasinier/Admin)")
     @PutMapping("/{id}/valider2")
-    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
+
     // CORRECTION ICI : On ajoute 'Principal principal' en paramètre
     public ResponseEntity<?> validerLivraison(@PathVariable Long id, Principal principal) {
         try {
@@ -70,10 +71,10 @@ public class BonLivraisonController {
     }
 
     @PutMapping("/{id}/valider1")
-    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
     public ResponseEntity<?> validerLivraison1(@PathVariable Long id, Principal principal) {
         try {
-            BonLivraisonResponseDTO bl = bonLivraisonService.validerETAttendre(id, principal.getName());
+            BonLivraisonResponseDTO bl = bonLivraisonService.validerETALivrer(id, principal.getName());
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", HttpStatus.OK.value());

@@ -108,7 +108,8 @@ public class BonLivraisonService {
         BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
                 .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
 
-        if (bl.getStatut() != BonLivraisonStatus.EN_ATTENTE && bl.getStatut() != BonLivraisonStatus.A_LIVRER) {            throw new IllegalStateException("Cette livraison a déjà été validée.");
+        if (bl.getStatut() != BonLivraisonStatus.EN_ATTENTE && bl.getStatut() != BonLivraisonStatus.A_LIVRER)
+        {            throw new IllegalStateException("Cette livraison a déjà été validée.");
         }
 
         // --- Logique de décrémentation du stock (inchangée) ---
@@ -147,6 +148,21 @@ public class BonLivraisonService {
         // ❌ Suppression de la mise à jour du statut "A_LIVRER"
         // ✅ On remet explicitement le statut à EN_ATTENTE (optionnel si c’est déjà son état actuel)
         bl.setStatut(BonLivraisonStatus.EN_ATTENTE);
+
+        // Enregistrement
+        BonLivraison updatedBl = bonLivraisonRepository.save(bl);
+
+        // ❌ Pas de vente, pas de notification
+
+        return buildResponseDTO(updatedBl);
+    }
+
+
+    public BonLivraisonResponseDTO validerETALivrer(Long bonLivraisonId, String agentEmail) {
+        BonLivraison bl = bonLivraisonRepository.findById(bonLivraisonId)
+                .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé: " + bonLivraisonId));
+
+        bl.setStatut(BonLivraisonStatus.A_LIVRER);
 
         // Enregistrement
         BonLivraison updatedBl = bonLivraisonRepository.save(bl);
