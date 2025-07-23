@@ -112,6 +112,7 @@ public class CommandeController {
 
     @Operation(summary = "Récupérer les commandes par ID de client",
             description = "Retourne une liste de toutes les commandes passées par un client spécifique.")
+    @PreAuthorize("hasAuthority('COMMANDE_READ')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Commandes trouvées et retournées avec succès"),
             @ApiResponse(responseCode = "404", description = "Aucune commande trouvée pour ce client (la liste sera vide)")
@@ -129,66 +130,13 @@ public class CommandeController {
 
 
     /*  METHODE DE RECHERCHE */
+    @PreAuthorize("hasAuthority('COMMANDE_READ')")
     @Operation(summary = "RECHERCHE")
     @GetMapping("/search")
     public ResponseEntity<List<CommandeResponseDTO>> searchCommandes(@RequestParam String q) {
         List<CommandeResponseDTO> dtoList = commandeService.rechercherCommandes(q);
         return ResponseEntity.ok(dtoList);
     }
-
-    //    @GetMapping("/search")
-//    public ResponseEntity<List<CommandeResponseDTO>> searchCommandes(@RequestParam String q) {
-//        List<Commande> commandes = commandeRepository.searchCommandes(q);
-//        List<CommandeResponseDTO> dtoList = commandes.stream()
-//                .map(this::convertToResponseDTO)
-//                .collect(Collectors.toList());
-//        return ResponseEntity.ok(dtoList);
-//    }
-//
-//    private CommandeResponseDTO convertToResponseDTO(Commande commande) {
-//        CommandeResponseDTO dto = new CommandeResponseDTO();
-//
-//        dto.setId(commande.getId());
-//        dto.setDate(commande.getDate());
-//        dto.setStatut(commande.getStatut());
-//
-//        // Convertir le client
-//        Client client = commande.getClient();
-//        if (client != null) {
-//            ClientDto clientDto = new ClientDto();
-//            clientDto.setId(client.getId());
-//            clientDto.setNom(client.getNom());
-//            dto.setClient(clientDto);
-//        }
-//
-//        // Convertir le lieu de livraison (lieuStock)
-//        LieuStock lieuStock = commande.getLieuStock();
-//        if (lieuStock != null) {
-//            LieuStockDTO lieuDto = new LieuStockDTO();
-//            lieuDto.setId(lieuStock.getId());
-//            lieuDto.setNom(lieuStock.getNom());
-//            dto.setLieuLivraison(lieuDto);
-//        }
-//
-//        // Convertir les lignes
-//        List<LigneCommandeResponseDTO> ligneDtos = commande.getLignes().stream().map(ligne -> {
-//            LigneCommandeResponseDTO lDto = new LigneCommandeResponseDTO();
-//            lDto.setId(ligne.getId());
-//            lDto.setProduitPrix(ligne.getProduitPrix());
-//            lDto.setQteVoulu(ligne.getQteVoulu());
-//            return lDto;
-//        }).collect(Collectors.toList());
-//
-//        dto.setLignes(ligneDtos);
-//
-//        // Calculer le total de la commande
-//        double total = ligneDtos.stream()
-//                .mapToDouble(l -> l.getProduitPrix() * l.getQteVoulu())
-//                .sum();
-//        dto.setTotalCommande(total);
-//
-//        return dto;
-//    }
 
 
 
