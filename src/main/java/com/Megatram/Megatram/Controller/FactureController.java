@@ -48,7 +48,7 @@ public class FactureController {
 
     @Operation(summary = "Récupère la liste de toutes les factures")
     @GetMapping
-   @PreAuthorize("hasAnyRole('ADMIN', 'DG', 'CONTROLEUR')") // Seuls les rôles de supervision peuvent tout voir
+   @PreAuthorize(" hasAuthority('FACTURE_GENERATE') or hasAnyRole('ADMIN', 'DG', 'CONTROLEUR')") // Seuls les rôles de supervision peuvent tout voir
     public ResponseEntity<List<FactureResponseDTO>> getAllFactures() {
         List<FactureResponseDTO> factures = factureService.getAllFactures();
         return ResponseEntity.ok(factures);

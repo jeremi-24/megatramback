@@ -51,10 +51,11 @@ public class UtilisateurService {
     // ---------- AUTHENTIFICATION ----------
 
     public Utilisateur login(String email, String rawPassword) {
-        return utilisateurRepository.findByEmail(email)
+        return utilisateurRepository.findByEmailWithPermissions(email)
                 .filter(utilisateur -> passwordEncoder.matches(rawPassword, utilisateur.getPassword()))
                 .orElse(null);
     }
+    
 
     public Utilisateur saveUtilisateur(Utilisateur utilisateur) {
         String rawPassword = utilisateur.getPassword();

@@ -40,7 +40,7 @@ public class BonLivraisonController {
 
     @Operation(summary = "Génère un Bon de Livraison pour une commande")
     @PostMapping
-    @PreAuthorize("hasAuthority('LIVRAISON_GENERATE') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('LIVRAISON_GENERATE') or hasAnyRole('ADMIN','SECRETARIAT','MAGASINIER')")
     public ResponseEntity<?> genererBonLivraison(@RequestParam Long commandeId) {
         try {
             BonLivraisonResponseDTO bl = bonLivraisonService.genererBonLivraison(commandeId);
@@ -54,7 +54,7 @@ public class BonLivraisonController {
 
     @Operation(summary = "Valide la première étape d'une livraison")
     @PutMapping("/{id}/valider1")
-    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE') or hasAnyRole('ADMIN','SECRETARIAT')")
     public ResponseEntity<?> validerLivraison1(@PathVariable Long id, Principal principal) {
         try {
             BonLivraisonResponseDTO bl = bonLivraisonService.validerETALivrer(id, principal.getName());
@@ -86,7 +86,7 @@ public class BonLivraisonController {
 
     @Operation(summary = "Valide la deuxième et dernière étape d'une livraison et décrémente le stock")
     @PutMapping("/{id}/valider2")
-    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE') or hasAnyRole('ADMIN','MAGASINIER')")
     public ResponseEntity<?> validerLivraison(@PathVariable Long id, Principal principal) {
         try {
             BonLivraisonResponseDTO bl = bonLivraisonService.validerEtLivrer(id, principal.getName());
@@ -100,7 +100,7 @@ public class BonLivraisonController {
 
     @Operation(summary = "Récupère les bons de livraison pour le lieu concerné (Magasinier)")
     @GetMapping("/bons")
-    @PreAuthorize("hasAuthority('LIVRAISON_READ') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('LIVRAISON_READ') or hasAnyRole('ADMIN','BOUTIQUIER','MAGASINIER','SECRETARIAT')")
     public ResponseEntity<List<BonLivraisonResponseDTO>> getBonsLivraisonMagasinier() {
         Utilisateur magasinier = utilisateurService.getUtilisateurConnecte();
 
@@ -126,7 +126,7 @@ public class BonLivraisonController {
             }
     )
     @GetMapping
-    @PreAuthorize("hasAuthority('LIVRAISON_READ') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('LIVRAISON_READ') or hasAnyRole('ADMIN','SECRETARIAT')")
     public ResponseEntity<List<BonLivraisonResponseDTO>> getAllBonsLivraison() {
         List<BonLivraisonResponseDTO> bons = bonLivraisonService.getAllBonLivraisons();
         return ResponseEntity.ok(bons);

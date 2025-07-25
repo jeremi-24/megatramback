@@ -25,7 +25,7 @@ public class StockController {
 
     @Operation(summary = "Récupère tous les stocks")
     @GetMapping
-    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')") // Utilisation de la permission existante pour la gestion des stocks
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN','BOUTIQUIER')") // Utilisation de la permission existante pour la gestion des stocks
     public ResponseEntity<List<StockDto>> getAllStocks() {
         List<StockDto> stocks = stockService.getAllStocks();
         return ResponseEntity.ok(stocks);

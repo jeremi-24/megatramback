@@ -36,7 +36,7 @@ public class CommandeController {
     private CommandeRepository commandeRepository;
 
     @Operation(summary = "Créer une nouvelle commande", description = "Crée une nouvelle commande avec un statut 'EN_ATTENTE'. Le lieu de livraison est déterminé automatiquement à partir des produits.")
-    @PreAuthorize("hasAuthority('COMMANDE_CREATE') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('COMMANDE_CREATE') or hasAnyRole('ADMIN','BOUTIQUIER','MAGASINIER','SECRETARIAT')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Commande créée avec succès",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = CommandeResponseDTO.class))),
@@ -53,7 +53,7 @@ public class CommandeController {
 
     // ... Les autres endpoints (GET, POST valider, PUT) restent fonctionnellement les mêmes mais bénéficieront de la correction ...
 
-    @PreAuthorize("hasAuthority('COMMANDE_READ') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('COMMANDE_READ') or hasAnyRole('ADMIN','BOUTIQUIER','MAGASINIER','SECRETARIAT')")
     @Operation(summary = "Récupérer toutes les commandes", description = "Retourne une liste de toutes les commandes existantes.")
     @GetMapping
     public ResponseEntity<List<CommandeResponseDTO>> recupererLesCommandes() {
@@ -61,7 +61,7 @@ public class CommandeController {
         return ResponseEntity.ok(commandes);
     }
 
-    @PreAuthorize("hasAuthority('COMMANDE_READ') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('COMMANDE_READ') or hasAnyRole('ADMIN','BOUTIQUIER','MAGASINIER','SECRETARIAT')")
     @Operation(summary = "Récupérer une commande par son ID", description = "Retourne les détails d'une commande spécifique.")
     @GetMapping("/{id}")
     public ResponseEntity<CommandeResponseDTO> recupererCommandeParId(@PathVariable Long id) {
@@ -70,7 +70,7 @@ public class CommandeController {
     }
 
 
-    @PreAuthorize("hasAuthority('COMMANDE_VALIDATE') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('COMMANDE_VALIDATE') or hasAnyRole('ADMIN','SECRETARIAT')")
     @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
     @PostMapping("/{id}/valider")
     public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {

@@ -72,7 +72,7 @@ public class ProduitController {
 
     @Operation(summary = "Récupère la liste de tous les produits")
     @GetMapping
-    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_READ
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN','BOUTIQUIER')") // Basé sur la permission PRODUIT_READ
     public ResponseEntity<List<ProduitDto>> getAllProduits() {
         List<ProduitDto> produits = produitService.getAllProduits();
         return ResponseEntity.ok(produits);

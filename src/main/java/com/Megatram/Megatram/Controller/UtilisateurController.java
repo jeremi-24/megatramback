@@ -1,5 +1,7 @@
 package com.Megatram.Megatram.Controller;
 
+import com.Megatram.Megatram.Entity.Permission;
+
 import com.Megatram.Megatram.Dto.*;
 import com.Megatram.Megatram.Entity.Client;
 import com.Megatram.Megatram.Entity.Role;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/users")
@@ -109,7 +112,16 @@ public class UtilisateurController {
 
         Utilisateur utilisateur = utilisateurService.login(email, rawPassword);
         if (utilisateur != null) {
-            String token = jwtUtil.generateToken(email, utilisateur.getRole().getNom());
+
+            List<String> permissions = utilisateur.getRole().getPermissions() != null
+            ? utilisateur.getRole().getPermissions().stream()
+                .filter(Permission::getAutorise)
+                .map(Permission::getAction)
+                .collect(Collectors.toList())
+            : List.of(); // Si la liste des permissions est null
+    
+    String token = jwtUtil.generateToken(email, utilisateur.getRole().getNom(), permissions);
+    
             response.put("success", true);
             response.put("token", token);
             response.put("message", "Login réussi");
