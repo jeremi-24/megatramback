@@ -1,15 +1,35 @@
 package com.Megatram.Megatram.Dto;
 
+import com.Megatram.Megatram.Entity.Reapprovisionnement;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ReapprovisionnementDetailsDto {
 
-    public Long id;
-    public String source;
-    public String agent;
-    public LocalDateTime date;
-    public List<LigneReapprovisionnementDto> lignes;
+    private Long id;
+    private String source;
+    private String agent;
+    private LocalDateTime date;
+    private List<LigneReapprovisionnementDto> lignes;
+
+    public ReapprovisionnementDetailsDto() {
+    }
+
+    // Constructeur pratique pour convertir une entité en DTO de détails
+    public ReapprovisionnementDetailsDto(Reapprovisionnement reappro) {
+        this.id = reappro.getId();
+        this.source = reappro.getSource();
+        this.agent = reappro.getAgent();
+        this.date = reappro.getDate();
+        if (reappro.getLignes() != null) {
+            this.lignes = reappro.getLignes().stream()
+                .map(LigneReapprovisionnementDto::new) // S'assure que LigneReapprovisionnementDto a un constructeur (LigneReapprovisionnement)
+                .collect(Collectors.toList());
+        }
+    }
+
+    // --- Getters and Setters ---
 
     public Long getId() {
         return id;

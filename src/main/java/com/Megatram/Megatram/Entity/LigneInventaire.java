@@ -14,9 +14,13 @@ public class LigneInventaire {
     @ManyToOne
     private Produit produit;
 
+    // Ces champs stockeront les quantités en UNITÉS TOTALES
     private int qteScanne;
     private int qteAvantScan;
     private Integer ecart;
+
+    // Nouveau champ pour stocker le type de quantité scannée ("CARTON" ou "UNITE")
+    private String typeQuantiteScanne;
 
     @ManyToOne
     private LieuStock lieuStock;
@@ -75,5 +79,14 @@ public class LigneInventaire {
 
     public void setLieuStock(LieuStock lieuStock) {
         this.lieuStock = lieuStock;
+    }
+
+    // Getter et Setter pour le nouveau champ typeQuantiteScanne
+    public String getTypeQuantiteScanne() {
+        return typeQuantiteScanne;
+    }
+
+    public void setTypeQuantiteScanne(String typeQuantiteScanne) {
+        this.typeQuantiteScanne = typeQuantiteScanne;
     }
 }

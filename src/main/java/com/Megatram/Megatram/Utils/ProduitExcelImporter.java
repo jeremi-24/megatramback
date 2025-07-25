@@ -28,7 +28,10 @@ public class ProduitExcelImporter {
                 Produit produit = new Produit();
                 produit.setNom(row.getCell(0).getStringCellValue());
                 produit.setRef(row.getCell(1).getStringCellValue());
-                produit.setQte((int) row.getCell(2).getNumericCellValue());
+                
+                // CORRIGÉ : La ligne suivante est supprimée car la quantité n'est plus gérée sur l'entité Produit.
+                // produit.setQte((int) row.getCell(2).getNumericCellValue()); 
+                
                 produit.setPrix(row.getCell(3).getNumericCellValue());
 
                 // Catégorie en colonne 4
@@ -45,5 +48,4 @@ public class ProduitExcelImporter {
 
         return produits;
     }
-
 }

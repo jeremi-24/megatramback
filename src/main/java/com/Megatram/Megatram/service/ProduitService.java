@@ -41,7 +41,6 @@ public class ProduitService {
     private final CategorieRep categorieRep;
     private final LieuStockRepository lieuStockRepository;
 
-    // Définir le chemin de stockage des codes-barres une seule fois
     private final Path barcodeStoragePath = Paths.get("barcodes");
 
     @Autowired
@@ -52,58 +51,63 @@ public class ProduitService {
     }
 
     /**
-     * Crée un nouveau produit. La quantité initiale est toujours 0.
+     * Crée un nouveau produit avec ses informations, y compris quantité par carton et prix par carton.
+     * La quantité initiale en stock est toujours 0 (gérée par le système de stock).
      * Le code-barres est généré et son image est sauvegardée.
      */
     public ProduitDto createProduit(ProduitRequestDTO dto) {
         Categorie categorie = categorieRep.findById(dto.getCategorieId())
-                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
+                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l\'ID : " + dto.getCategorieId()));
 
         LieuStock lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
-                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
+                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l\'ID : " + dto.getLieuStockId()));
 
         Produit produit = new Produit();
         produit.setNom(dto.getNom());
         produit.setRef(dto.getRef());
-        produit.setPrix(dto.getPrix());
+        produit.setPrix(dto.getPrix()); // Prix unitaire
         produit.setQteMin(dto.getQteMin());
-        produit.setQte(0); // Règle métier : la quantité est 0 à la création.
+        // produit.setQte(0); // Ancienne gestion de quantité, remplacée par le système de stock
         produit.setCategorie(categorie);
         produit.setLieuStock(lieuStock);
+        produit.setQteParCarton(dto.getQteParCarton()); // Définir la quantité par carton
+        produit.setPrixCarton(dto.getPrixCarton()); // Définir le prix par carton
 
-        // Le code-barres texte est généré par @PrePersist dans l'entité Produit
+
         Produit savedProduit = produitRepos.save(produit);
 
-        // On génère l'image du code-barres après la sauvegarde
         generateBarcodeImage(savedProduit.getCodeBarre());
 
-        return new ProduitDto(savedProduit);
+        return new ProduitDto(savedProduit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
     }
 
     /**
-     * Met à jour les informations d'un produit.
-     * Note: La quantité n'est pas modifiée ici, elle doit l'être via des mouvements de stock.
+     * Met à jour les informations d\'un produit, y compris quantité par carton et prix par carton.
+     * Note: La quantité en stock n\'est pas modifiée ici.
      */
     public ProduitDto updateProduit(Long id, ProduitRequestDTO dto) {
         Produit produitToUpdate = produitRepos.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé pour la mise à jour : " + id));
 
         Categorie categorie = categorieRep.findById(dto.getCategorieId())
-                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
+                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l\'ID : " + dto.getCategorieId()));
 
         LieuStock lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
-                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
+                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l\'ID : " + dto.getLieuStockId()));
 
         produitToUpdate.setNom(dto.getNom());
         produitToUpdate.setRef(dto.getRef());
-        produitToUpdate.setPrix(dto.getPrix());
+        produitToUpdate.setPrix(dto.getPrix()); // Prix unitaire
         produitToUpdate.setQteMin(dto.getQteMin());
         produitToUpdate.setCategorie(categorie);
         produitToUpdate.setLieuStock(lieuStock);
+        produitToUpdate.setQteParCarton(dto.getQteParCarton()); // Mettre à jour la quantité par carton
+        produitToUpdate.setPrixCarton(dto.getPrixCarton()); // Mettre à jour le prix par carton
+
 
         Produit updatedProduit = produitRepos.save(produitToUpdate);
 
-        return new ProduitDto(updatedProduit);
+        return new ProduitDto(updatedProduit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
     }
 
     /**
@@ -112,8 +116,8 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public ProduitDto getProduitById(Long id) {
         Produit produit = produitRepos.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec l'ID : " + id));
-        return new ProduitDto(produit);
+                .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec l\'ID : " + id));
+        return new ProduitDto(produit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
     }
 
     /**
@@ -122,7 +126,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public List<ProduitDto> getAllProduits() {
         return produitRepos.findAll().stream()
-                .map(ProduitDto::new)
+                .map(ProduitDto::new) // Utiliser le constructeur de ProduitDto
                 .collect(Collectors.toList());
     }
 
@@ -132,22 +136,20 @@ public class ProduitService {
      */
     @Transactional(readOnly = true)
     public ProduitDto getProduitByCodeBarre(String codeBarre) {
-        // Utilise le repository pour trouver le produit
         Produit produit = produitRepos.findByCodeBarre(codeBarre)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec le code-barres : " + codeBarre));
-        // Convertit l'entité trouvée en DTO de réponse
-        return new ProduitDto(produit);
+        return new ProduitDto(produit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
     }
 
-//    /**
-//     * Supprime un produit  ou  plusieurs  l'image de son code-barres.
-//     */
+    /**
+     * Supprime un produit et l\'image de son code-barres.
+     */
     public void deleteProduit(Long id) {
         Produit produit = produitRepos.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé pour la suppression : " + id));
 
         deleteBarcodeImage(produit.getCodeBarre());
-        produitRepos.delete(produit); // fonctionne maintenant grâce à ON DELETE SET NULL
+        produitRepos.delete(produit);
     }
 
     public List<String> deleteProduitsEnIgnorantErreurs(List<Long> ids) {
@@ -157,20 +159,18 @@ public class ProduitService {
             try {
                 produitRepos.deleteById(id);
             } catch (DataIntegrityViolationException e) {
-                // Récupère le nom du produit qui n'a pas pu être supprimé
                 produitRepos.findById(id).ifPresent(produit -> nomsNonSupprimes.add(produit.getNom()));
             }
         }
 
-        return nomsNonSupprimes; // Retourne la liste des noms des produits non supprimés
+        return nomsNonSupprimes;
     }
-
 
 
     /**
      * Importer des produits en masse depuis un fichier Excel.
+     * Adapte pour lire qteParCarton et prixCarton si les colonnes existent.
      */
-
     public List<ProduitDto> importProduitsFromExcel(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Le fichier fourni est vide.");
@@ -202,27 +202,44 @@ public class ProduitService {
                 if (row == null) continue;
 
                 String nom = formatter.formatCellValue(row.getCell(colIndexMap.get("nom"))).trim();
-                if (nom.isEmpty()) continue; // Ignore ligne vide
+                if (nom.isEmpty()) continue;
 
                 String ref = formatter.formatCellValue(row.getCell(colIndexMap.get("ref"))).trim();
-                if (ref.isEmpty()) continue; // Ignore si pas de ref
+                if (ref.isEmpty()) continue;
 
                 Produit p = new Produit();
                 p.setNom(nom);
                 p.setRef(ref);
 
-                // Prix (optionnel)
+                // Prix unitaire (optionnel, nom de colonne 'prix' ou 'prix_unitaire')
                 if (colIndexMap.containsKey("prix")) {
                     String prixStr = formatter.formatCellValue(row.getCell(colIndexMap.get("prix"))).trim();
                     p.setPrix(parseDoubleSafe(prixStr, 0.0));
+                } else if (colIndexMap.containsKey("prix_unitaire")) {
+                    String prixStr = formatter.formatCellValue(row.getCell(colIndexMap.get("prix_unitaire"))).trim();
+                    p.setPrix(parseDoubleSafe(prixStr, 0.0));
                 }
 
-                // Quantité (optionnelle)
-                if (colIndexMap.containsKey("qte")) {
-                    String qteStr = formatter.formatCellValue(row.getCell(colIndexMap.get("qte"))).trim();
+
+                // Quantité minimale (optionnelle, nom de colonne 'qte_min')
+                if (colIndexMap.containsKey("qte_min")) {
+                    String qteStr = formatter.formatCellValue(row.getCell(colIndexMap.get("qte_min"))).trim();
                     p.setQteMin(parseIntSafe(qteStr, 0));
                 }
-                p.setQte(0); // Toujours initialisé à 0
+                // p.setQte(0); // Ancienne gestion de quantité
+
+                // Quantité par carton (optionnelle, nom de colonne 'qte_par_carton')
+                 if (colIndexMap.containsKey("qte_par_carton")) {
+                    String qteCartonStr = formatter.formatCellValue(row.getCell(colIndexMap.get("qte_par_carton"))).trim();
+                    p.setQteParCarton(parseIntSafe(qteCartonStr, 0));
+                }
+
+                // Prix par carton (optionnel, nom de colonne 'prix_carton')
+                 if (colIndexMap.containsKey("prix_carton")) {
+                    String prixCartonStr = formatter.formatCellValue(row.getCell(colIndexMap.get("prix_carton"))).trim();
+                    p.setPrixCarton(parseDoubleSafe(prixCartonStr, 0.0));
+                }
+
 
                 // Catégorie (optionnelle)
                 if (colIndexMap.containsKey("categorie")) {
@@ -238,9 +255,9 @@ public class ProduitService {
                     }
                 }
 
-                // Lieu (optionnel)
-                if (colIndexMap.containsKey("lieu")) {
-                    String lieuStockNom = formatter.formatCellValue(row.getCell(colIndexMap.get("lieu"))).trim();
+                // Lieu de stock (optionnel)
+                if (colIndexMap.containsKey("lieu") || colIndexMap.containsKey("lieu_stock")) {
+                    String lieuStockNom = colIndexMap.containsKey("lieu") ? formatter.formatCellValue(row.getCell(colIndexMap.get("lieu"))).trim() : formatter.formatCellValue(row.getCell(colIndexMap.get("lieu_stock"))).trim();
                     if (!lieuStockNom.isEmpty()) {
                         LieuStock lieu = lieuStockRepository.findByNomIgnoreCase(lieuStockNom)
                                 .orElseGet(() -> {
@@ -252,28 +269,24 @@ public class ProduitService {
                     }
                 }
 
+
                 produits.add(p);
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Erreur lors de la lecture du fichier Excel: " + e.getMessage(), e);
+            throw new RuntimeException("Erreur lors de l'lecture du fichier Excel: " + e.getMessage(), e);
         }
 
         List<Produit> savedProduits = produitRepos.saveAll(produits);
         savedProduits.forEach(p -> generateBarcodeImage(p.getCodeBarre()));
 
         return savedProduits.stream()
-                .map(ProduitDto::new)
+                .map(ProduitDto::new) // Utiliser le constructeur de ProduitDto
                 .collect(Collectors.toList());
     }
 
 
-
-
-
-
-
-    // Méthodes utilitaires
+    // Méthodes utilitaires (inchangées)
     private double parseDoubleSafe(String value, double defaultValue) {
         try {
             return Double.parseDouble(value.replace(",", "."));
@@ -290,11 +303,6 @@ public class ProduitService {
         }
     }
 
-
-
-    /**
-     * Récupère la valeur d'une cellule de manière sécurisée
-     */
     private String getValueSafely(Row row, Integer columnIndex, DataFormatter formatter) {
         if (columnIndex == null) {
             return "";
@@ -306,28 +314,17 @@ public class ProduitService {
         return formatter.formatCellValue(cell).trim();
     }
 
-
     private void generateBarcodeImage(String barcodeText) {
-        // Si pas de texte, on fait rien
         if (barcodeText == null || barcodeText.isEmpty()) return;
-
         try {
-            // Créer le dossier si il existe pas
             Files.createDirectories(barcodeStoragePath);
-
-            // Chemin du fichier
             Path fichier = barcodeStoragePath.resolve(barcodeText + ".png");
-
-            // Générer le code-barres et sauvegarder
             BitMatrix matrix = new MultiFormatWriter().encode(barcodeText, BarcodeFormat.CODE_128, 200, 150);
             MatrixToImageWriter.writeToPath(matrix, "PNG", fichier);
-
         } catch (Exception e) {
             System.out.println("Erreur code-barres: " + e.getMessage());
         }
     }
-
-
 
     private void deleteBarcodeImage(String barcodeText) {
         if (barcodeText == null || barcodeText.isEmpty()) {
@@ -342,61 +339,41 @@ public class ProduitService {
     }
 
 
-
-
-
-    //RECHERCHE
+    //RECHERCHE (adapter mapToDto)
     public List<ProduitDto> searchProduits(String searchTerm) {
         List<Produit> produits = produitRepos.searchProduits(searchTerm);
         return produits.stream()
-                .map(this::mapToDto)
+                .map(this::mapToDto) // Utiliser mapToDto
                 .collect(Collectors.toList());
     }
 
     private ProduitDto mapToDto(Produit produit) {
-        ProduitDto dto = new ProduitDto(produit); // produit est une instance valide
-        dto.setId(produit.getId());
-        dto.setNom(produit.getNom());
-        dto.setRef(produit.getRef());
-        dto.setQte(produit.getQte());
-        dto.setPrix(produit.getPrix());
-        dto.setCodeBarre(produit.getCodeBarre());
-        dto.setCategorieId(produit.getCategorie() != null ? produit.getCategorie().getId() : null);
-        dto.setCategorieNom(produit.getCategorie() != null ? produit.getCategorie().getNom() : null);
-        dto.setLieuStockId(produit.getLieuStock() != null ? produit.getLieuStock().getId() : null);
-        dto.setLieuStockNom(produit.getLieuStock() != null ? produit.getLieuStock().getNom() : null);
-        dto.setQteMin(produit.getQteMin());
-        return dto;
+        // Utiliser le constructeur de ProduitDto au lieu de mapper manuellement
+        return new ProduitDto(produit);
     }
-
 
 
     @Transactional
     public void assignerCategorieEtEntrepot(AssignationProduitsDTO dto) {
-        // 1. Récupérer la liste des produits concernés
         List<Produit> produits = produitRepos.findAllById(dto.getProduitIds());
 
         if (produits.isEmpty()) {
             throw new IllegalArgumentException("Aucun produit trouvé avec les IDs fournis.");
         }
 
-        // 2. Initialiser les objets à affecter (catégorie et lieu de stock)
         Categorie categorie = null;
         LieuStock lieuStock = null;
 
-        // 3. Récupération de la catégorie si précisée
         if (dto.getCategorieId() != null) {
             categorie = categorieRep.findById(dto.getCategorieId())
                     .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
         }
 
-        // 4. Récupération du lieu de stock si précisé
         if (dto.getLieuStockId() != null) {
             lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
                     .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
         }
 
-        // 5. Mise à jour des produits
         for (Produit produit : produits) {
             if (categorie != null) {
                 produit.setCategorie(categorie);
@@ -406,7 +383,6 @@ public class ProduitService {
             }
         }
 
-        // 6. Sauvegarde en base
         produitRepos.saveAll(produits);
     }
 

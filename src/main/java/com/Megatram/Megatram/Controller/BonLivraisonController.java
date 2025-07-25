@@ -10,14 +10,13 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal; // <-- N'oubliez pas cet import
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +38,9 @@ public class BonLivraisonController {
     @Autowired
     private UtilisateurService utilisateurService;
 
-    @Operation(summary = "Génère un Bon de Livraison pour une commande (réservé Secrétariat/Admin)")
+    @Operation(summary = "Génère un Bon de Livraison pour une commande")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')")
+    @PreAuthorize("hasAuthority('LIVRAISON_GENERATE')")
     public ResponseEntity<?> genererBonLivraison(@RequestParam Long commandeId) {
         try {
             BonLivraisonResponseDTO bl = bonLivraisonService.genererBonLivraison(commandeId);
@@ -53,14 +52,43 @@ public class BonLivraisonController {
         }
     }
 
-    @Operation(summary = "Valide une livraison et décrémente le stock (réservé Magasinier/Admin)")
-    @PutMapping("/{id}/valider2")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
+    @Operation(summary = "Valide la première étape d'une livraison")
+    @PutMapping("/{id}/valider1")
+    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
+    public ResponseEntity<?> validerLivraison1(@PathVariable Long id, Principal principal) {
+        try {
+            BonLivraisonResponseDTO bl = bonLivraisonService.validerETALivrer(id, principal.getName());
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", "Livraison validée en attente de validation finale par le magasinier.");
+            response.put("bonLivraison", bl);
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", HttpStatus.NOT_FOUND.value());
+            error.put("error", "Bon de livraison non trouvé");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        } catch (IllegalStateException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", HttpStatus.BAD_REQUEST.value());
+            error.put("error", "Erreur de validation");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            error.put("error", "Erreur serveur");
+            error.put("message", "Une erreur inattendue est survenue.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 
-    // CORRECTION ICI : On ajoute 'Principal principal' en paramètre
+    @Operation(summary = "Valide la deuxième et dernière étape d'une livraison et décrémente le stock")
+    @PutMapping("/{id}/valider2")
+    @PreAuthorize("hasAuthority('LIVRAISON_VALIDATE')")
     public ResponseEntity<?> validerLivraison(@PathVariable Long id, Principal principal) {
         try {
-            // Et on passe le nom de l'utilisateur (son email) en deuxième argument
             BonLivraisonResponseDTO bl = bonLivraisonService.validerEtLivrer(id, principal.getName());
             return ResponseEntity.ok(bl);
         } catch (EntityNotFoundException e) {
@@ -70,51 +98,14 @@ public class BonLivraisonController {
         }
     }
 
-    @PutMapping("/{id}/valider1")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
-    public ResponseEntity<?> validerLivraison1(@PathVariable Long id, Principal principal) {
-        try {
-            BonLivraisonResponseDTO bl = bonLivraisonService.validerETALivrer(id, principal.getName());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", "Livraison validée en attente de validation finale par le magasinier.");
-            response.put("bonLivraison", bl);
-
-            return ResponseEntity.ok(response);
-        } catch (EntityNotFoundException e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", HttpStatus.NOT_FOUND.value());
-            error.put("error", "Bon de livraison non trouvé");
-            error.put("message", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        } catch (IllegalStateException e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", HttpStatus.BAD_REQUEST.value());
-            error.put("error", "Erreur de validation");
-            error.put("message", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-            error.put("error", "Erreur serveur");
-            error.put("message", "Une erreur inattendue est survenue.");
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
-    }
-
-
-    @Operation(summary = "Récupère les bons de livraison pour le lieu concerné")
+    @Operation(summary = "Récupère les bons de livraison pour le lieu concerné (Magasinier)")
     @GetMapping("/bons")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
+    @PreAuthorize("hasAuthority('LIVRAISON_READ')")
     public ResponseEntity<List<BonLivraisonResponseDTO>> getBonsLivraisonMagasinier() {
         Utilisateur magasinier = utilisateurService.getUtilisateurConnecte();
 
         if (magasinier == null || magasinier.getLieu() == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         Long lieuId = magasinier.getLieu().getId();
@@ -122,12 +113,10 @@ public class BonLivraisonController {
 
         List<BonLivraisonResponseDTO> bons = bonLivraisonService.getBonsLivraisonParLieu(lieuId);
 
-        // Injecter l'email dans chaque bon
         bons.forEach(bon -> bon.setEmail(email));
 
         return ResponseEntity.ok(bons);
     }
-
 
     @Operation(
             summary = "Récupère tous les bons de livraison",
@@ -137,12 +126,37 @@ public class BonLivraisonController {
             }
     )
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'MAGASINIER')")
+    @PreAuthorize("hasAuthority('LIVRAISON_READ')")
     public ResponseEntity<List<BonLivraisonResponseDTO>> getAllBonsLivraison() {
-        List<BonLivraisonResponseDTO> bons = bonLivraisonService.getAllBonsLivraison();
+        List<BonLivraisonResponseDTO> bons = bonLivraisonService.getAllBonLivraisons();
         return ResponseEntity.ok(bons);
     }
 
+    @Operation(summary = "Récupère un bon de livraison par son ID")
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('LIVRAISON_READ')")
+    public ResponseEntity<BonLivraisonResponseDTO> getBonLivraisonById(@PathVariable Long id) {
+        try {
+            BonLivraisonResponseDTO bonLivraison = bonLivraisonService.getBonLivraisonById(id);
+            return ResponseEntity.ok(bonLivraison);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
-
+    @Operation(summary = "Supprime un bon de livraison par son ID")
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('LIVRAISON_DELETE')") // Basé sur la permission LIVRAISON_DELETE
+    public ResponseEntity<Void> deleteBonLivraison(@PathVariable Long id) {
+        try {
+            bonLivraisonService.deleteBonLivraison(id);
+            return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+             return ResponseEntity.notFound().build();
+        } catch (IllegalStateException e) {
+             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (Exception e) {
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }

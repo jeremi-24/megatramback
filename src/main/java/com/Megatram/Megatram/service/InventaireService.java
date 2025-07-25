@@ -2,104 +2,107 @@ package com.Megatram.Megatram.service;
 
 import com.Megatram.Megatram.Dto.InventaireRequestDto;
 import com.Megatram.Megatram.Dto.InventaireResponseDto;
+import com.Megatram.Megatram.Dto.LigneInventaireDto;
 import com.Megatram.Megatram.Dto.LigneResponseDto;
 import com.Megatram.Megatram.Entity.Inventaire;
 import com.Megatram.Megatram.Entity.LigneInventaire;
 import com.Megatram.Megatram.Entity.Produit;
 import com.Megatram.Megatram.Entity.LieuStock;
-import com.Megatram.Megatram.repository.InventaireRepository;
-import com.Megatram.Megatram.repository.LigneInventaireRepository;
-import com.Megatram.Megatram.repository.ProduitRepos;
-import com.Megatram.Megatram.repository.LieuStockRepository;
-
+import com.Megatram.Megatram.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class InventaireService {
 
     @Autowired
     private InventaireRepository inventaireRepo;
-
     @Autowired
     private LigneInventaireRepository ligneRepo;
-
     @Autowired
     private ProduitRepos produitRepo;
-
     @Autowired
     private LieuStockRepository lieuStockRepo;
+    @Autowired
+    private StockService stockService;
+    @Autowired
+    private StockRepository stockRepository;
 
-    public InventaireResponseDto enregistrerInventaire(InventaireRequestDto request, boolean estPremierInventaire) {
+    @Transactional
+    public InventaireResponseDto enregistrerInventaire(InventaireRequestDto request) {
         Inventaire inventaire = new Inventaire();
-        inventaire.setCharge(request.charge);
+        inventaire.setCharge(request.getCharge()); // Utiliser le getter
         inventaireRepo.save(inventaire);
 
-        List<LigneResponseDto> lignes = request.produits.stream().map(Dto -> {
-            Produit produit = produitRepo.findById(Dto.produitId)
+        List<LigneResponseDto> lignesReponse = request.getProduits().stream().map(ligneRequestDto -> { // Utiliser le getter
+            Produit produit = produitRepo.findById(ligneRequestDto.getProduitId()) // Utiliser le getter
                     .orElseThrow(() -> new RuntimeException("Produit introuvable"));
 
-            LieuStock lieuStock = lieuStockRepo.findByNom(Dto.lieuStockNom)
-                    .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable : " + Dto.lieuStockNom));
+            LieuStock lieuStock = lieuStockRepo.findByNom(ligneRequestDto.getLieuStockNom()) // Utiliser le getter
+                    .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable : " + ligneRequestDto.getLieuStockNom()));
 
-            LigneInventaire ligne = new LigneInventaire();
-            ligne.setInventaire(inventaire);
-            ligne.setProduit(produit);
-            ligne.setQteAvantScan(produit.getQte());
-            ligne.setQteScanne(Dto.qteScanne);
-            ligne.setLieuStock(lieuStock);
+            LigneInventaire ligneInventaire = new LigneInventaire();
+            ligneInventaire.setInventaire(inventaire);
+            ligneInventaire.setProduit(produit);
+            ligneInventaire.setLieuStock(lieuStock);
 
-            if (!estPremierInventaire) {
-                ligne.setEcart(Dto.qteScanne - produit.getQte());
+            Optional<com.Megatram.Megatram.Entity.Stock> stockOptional = stockRepository.findByProduitAndLieuStock(produit, lieuStock);
+            int qteAvantScanTotaleUnites = stockOptional
+                .map(stock -> (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes())
+                .orElse(0);
+            ligneInventaire.setQteAvantScan(qteAvantScanTotaleUnites);
+
+            int qteScanneTotaleUnites;
+            if ("CARTON".equalsIgnoreCase(ligneRequestDto.getTypeQuantiteScanne())) { // Utiliser le getter
+                if (produit.getQteParCarton() <= 0) {
+                    throw new IllegalStateException("Le produit " + produit.getNom() + " n'a pas une quantité par carton valide.");
+                }
+                qteScanneTotaleUnites = ligneRequestDto.getQteScanne() * produit.getQteParCarton(); // Utiliser le getter
             } else {
-                ligne.setEcart(null);
-                produit.setQte(Dto.qteScanne);
-                produitRepo.save(produit);
+                qteScanneTotaleUnites = ligneRequestDto.getQteScanne(); // Utiliser le getter
+            }
+            ligneInventaire.setQteScanne(qteScanneTotaleUnites);
+            ligneInventaire.setTypeQuantiteScanne(ligneRequestDto.getTypeQuantiteScanne()); // Utiliser le getter
+
+            int ecartUnitesTotales = qteScanneTotaleUnites - qteAvantScanTotaleUnites;
+            ligneInventaire.setEcart(ecartUnitesTotales);
+
+            if (ecartUnitesTotales > 0) {
+                stockService.addStock(produit, lieuStock, ecartUnitesTotales);
+            } else if (ecartUnitesTotales < 0) {
+                stockService.removeStock(produit, lieuStock, Math.abs(ecartUnitesTotales));
+            } else if (!stockOptional.isPresent() && qteScanneTotaleUnites > 0) {
+                // CORRIGÉ: Faute de frappe
+                stockService.addStock(produit, lieuStock, qteScanneTotaleUnites);
             }
 
-            ligneRepo.save(ligne);
+            ligneRepo.save(ligneInventaire);
 
-            LigneResponseDto res = new LigneResponseDto();
-            res.produitId = produit.getId();
-            res.nomProduit = produit.getNom();
-            res.qteAvantScan = ligne.getQteAvantScan();
-            res.qteScanne = ligne.getQteScanne();
-            res.ecart = ligne.getEcart();
-            res.lieuStockNom = lieuStock.getNom();
-            return res;
+            // SIMPLIFIÉ: Utilisation du constructeur pour éliminer la redondance et les erreurs d'accès
+            return new LigneResponseDto(ligneInventaire);
+            
         }).collect(Collectors.toList());
 
-        InventaireResponseDto response = new InventaireResponseDto();
-        response.inventaireId = inventaire.getId();
-        response.charge = inventaire.getCharge();
-        response.date = inventaire.getDate();
-        response.lignes = lignes;
+        InventaireResponseDto response = new InventaireResponseDto(inventaire); // Utiliser un constructeur
+        response.setLignes(lignesReponse); // Utiliser le setter
 
         return response;
     }
 
     public List<InventaireResponseDto> recupererTousLesInventaires() {
         return inventaireRepo.findAll().stream().map(inv -> {
+            InventaireResponseDto response = new InventaireResponseDto(inv); // Utiliser le constructeur
             List<LigneInventaire> lignes = ligneRepo.findByInventaireId(inv.getId());
-            List<LigneResponseDto> ligneDtos = lignes.stream().map(ligne -> {
-                LigneResponseDto Dto = new LigneResponseDto();
-                Dto.produitId = ligne.getProduit().getId();
-                Dto.nomProduit = ligne.getProduit().getNom();
-                Dto.qteScanne = ligne.getQteScanne();
-                Dto.qteAvantScan = ligne.getQteAvantScan();
-                Dto.ecart = ligne.getEcart();
-                Dto.lieuStockNom = ligne.getLieuStock() != null ? ligne.getLieuStock().getNom() : null;
-                return Dto;
-            }).collect(Collectors.toList());
-
-            InventaireResponseDto response = new InventaireResponseDto();
-            response.inventaireId = inv.getId();
-            response.charge = inv.getCharge();
-            response.date = inv.getDate();
-            response.lignes = ligneDtos;
+            List<LigneResponseDto> ligneDtos = lignes.stream()
+                                                .map(LigneResponseDto::new)
+                                                .collect(Collectors.toList());
+            response.setLignes(ligneDtos); // Utiliser le setter
             return response;
         }).collect(Collectors.toList());
     }
@@ -107,24 +110,13 @@ public class InventaireService {
     public InventaireResponseDto getInventaireById(Long id) {
         Inventaire inv = inventaireRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inventaire introuvable"));
-
+        
+        InventaireResponseDto response = new InventaireResponseDto(inv); // Utiliser le constructeur
         List<LigneInventaire> lignes = ligneRepo.findByInventaireId(id);
-        List<LigneResponseDto> ligneDtos = lignes.stream().map(ligne -> {
-            LigneResponseDto Dto = new LigneResponseDto();
-            Dto.produitId = ligne.getProduit().getId();
-            Dto.nomProduit = ligne.getProduit().getNom();
-            Dto.qteScanne = ligne.getQteScanne();
-            Dto.qteAvantScan = ligne.getQteAvantScan();
-            Dto.ecart = ligne.getEcart();
-            Dto.lieuStockNom = ligne.getLieuStock() != null ? ligne.getLieuStock().getNom() : null;
-            return Dto;
-        }).collect(Collectors.toList());
-
-        InventaireResponseDto response = new InventaireResponseDto();
-        response.inventaireId = inv.getId();
-        response.charge = inv.getCharge();
-        response.date = inv.getDate();
-        response.lignes = ligneDtos;
+        List<LigneResponseDto> ligneDtos = lignes.stream()
+                                                .map(LigneResponseDto::new)
+                                                .collect(Collectors.toList());
+        response.setLignes(ligneDtos); // Utiliser le setter
         return response;
     }
 }

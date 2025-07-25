@@ -1,6 +1,6 @@
 package com.Megatram.Megatram.service;
 
-import com.Megatram.Megatram.Dto.*; // Assurez-vous d'avoir tous vos DTOs
+import com.Megatram.Megatram.Dto.*;
 import com.Megatram.Megatram.Entity.*;
 import com.Megatram.Megatram.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,54 +20,52 @@ public class VenteService {
     private final ProduitRepos produitRepos;
     private final LigneVenteRepo LigneVenteRepo;
     private final ClientRepository clientRepository;
+    private final StockService stockService;
 
     @Autowired
-    public VenteService(VenteRepository venteRepository, ProduitRepos produitRepos, LigneVenteRepo LigneVenteRepo, ClientRepository clientRepository) {
+    public VenteService(VenteRepository venteRepository, ProduitRepos produitRepos, LigneVenteRepo LigneVenteRepo, ClientRepository clientRepository, StockService stockService) {
         this.venteRepository = venteRepository;
         this.produitRepos = produitRepos;
         this.LigneVenteRepo = LigneVenteRepo;
         this.clientRepository = clientRepository;
+        this.stockService = stockService;
     }
 
-    /**
-     * NOUVELLE MÉTHODE : Crée une Vente à partir d'un Bon de Livraison.
-     * Cette méthode ne touche PAS au stock. Elle ne fait que créer l'enregistrement comptable.
-     */
     public void creerVenteDepuisBonLivraison(BonLivraison bl, String agentEmail) {
         Commande commande = bl.getCommande();
-
-        // Sécurité pour ne pas créer deux ventes pour la même commande
         if (venteRepository.existsByCommande_Id(commande.getId())) {
-            return; // On sort silencieusement si la vente existe déjà
+            return;
         }
 
         Vente vente = new Vente();
         vente.setClient(commande.getClient());
-        vente.setCaissier(agentEmail); // L'agent qui a validé la livraison est le "caissier"
-        vente.setRef("VENTE-CMD-" + commande.getId()); // Référence claire
-
-        Vente savedVente = venteRepository.save(vente);
+        vente.setCaissier(agentEmail);
+        vente.setRef("VENTE-CMD-" + commande.getId());
 
         List<LigneVente> lignesVente = new ArrayList<>();
         for (LigneLivraison ligneLivraison : bl.getLignesLivraison()) {
             LigneVente ligneVente = new LigneVente();
-            ligneVente.setProduitId(ligneLivraison.getProduitId());
+            
+            // CORRIGÉ : L'entité LigneLivraison a une relation directe vers Produit
+            Produit produit = ligneLivraison.getProduit(); 
+            if (produit == null) {
+                throw new EntityNotFoundException("Produit non trouvé pour la ligne de livraison id=" + ligneLivraison.getId());
+            }
+            ligneVente.setProduit(produit);
             ligneVente.setQteVendu(ligneLivraison.getQteLivre());
             ligneVente.setProduitPrix(ligneLivraison.getProduitPrix());
-            ligneVente.setVente(savedVente);
+            ligneVente.setTypeQuantite(ligneLivraison.getTypeQuantite());
+            ligneVente.setVente(vente);
             lignesVente.add(ligneVente);
         }
-        LigneVenteRepo.saveAll(lignesVente);
+        vente.setLignes(lignesVente);
+        venteRepository.save(vente);
     }
 
-    /**
-     * MÉTHODE EXISTANTE (légèrement améliorée) : Crée une Vente Directe (au comptoir).
-     * C'est cette méthode qui décrémente le stock.
-     */
     public VenteResponseDTO creerVenteDirecte(VenteDto venteDto, String agentEmail) {
         Vente vente = new Vente();
         vente.setCaissier(agentEmail);
-        vente.setRef(venteDto.getRef()); // Ex: VENTE-DIRECTE-TIMESTAMP
+        vente.setRef(venteDto.getRef());
 
         Client client = clientRepository.findById(venteDto.getClientId())
                 .orElseThrow(() -> new EntityNotFoundException("Client non trouvé : ID " + venteDto.getClientId()));
@@ -79,51 +76,48 @@ public class VenteService {
             Produit produit = produitRepos.findById(ligneDto.getProduitId())
                     .orElseThrow(() -> new EntityNotFoundException("Produit introuvable: id=" + ligneDto.getProduitId()));
 
-            if (produit.getQte() < ligneDto.getQteVendu()) {
-                throw new IllegalStateException("Stock insuffisant pour le produit : " + produit.getNom());
+            LieuStock lieuStock = produit.getLieuStock();
+            if (lieuStock == null) {
+                 throw new IllegalStateException("Le produit " + produit.getNom() + " n'a pas de lieu de stock attribué.");
+            }
+            
+            // CORRIGÉ : Le getter est getQteVendueDansLigne()
+            int quantiteVendue = ligneDto.getQteVendueDansLigne(); 
+            int qteParCarton = produit.getQteParCarton();
+            int quantiteTotaleVendueEnUnites;
+            double prixApplique;
+
+            if ("CARTON".equalsIgnoreCase(ligneDto.getTypeQuantite())) {
+                if (qteParCarton <= 0) {
+                    throw new IllegalStateException("Le produit " + produit.getNom() + " n'a pas une quantité par carton valide.");
+                }
+                quantiteTotaleVendueEnUnites = quantiteVendue * qteParCarton;
+                prixApplique = produit.getPrixCarton();
+            } else {
+                quantiteTotaleVendueEnUnites = quantiteVendue;
+                prixApplique = produit.getPrix();
             }
 
-            LigneVente ligne = new LigneVente();
-            ligne.setProduitId(produit.getId());
-            ligne.setQteVendu(ligneDto.getQteVendu());
-            ligne.setProduitPrix(produit.getPrix()); // Prix sécurisé depuis la BDD
-            ligne.setVente(vente);
-            lignes.add(ligne);
+            stockService.removeStock(produit, lieuStock, quantiteTotaleVendueEnUnites);
 
-            // Décrémenter le stock immédiatement
-            produit.setQte(produit.getQte() - ligneDto.getQteVendu());
-            produitRepos.save(produit);
+            LigneVente ligne = new LigneVente();
+            ligne.setProduit(produit);
+            ligne.setQteVendu(quantiteVendue);
+            ligne.setProduitPrix(prixApplique);
+            ligne.setVente(vente);
+            ligne.setTypeQuantite(ligneDto.getTypeQuantite());
+            lignes.add(ligne);
         }
         vente.setLignes(lignes);
 
         Vente savedVente = venteRepository.save(vente);
-        return buildVenteResponseDTO(savedVente);
+        return new VenteResponseDTO(savedVente);
     }
-
-    // --- Méthodes de lecture et suppression ---
 
     @Transactional(readOnly = true)
     public List<VenteResponseDTO> getAllVentes() {
         return venteRepository.findAll().stream()
-                .map(this::buildVenteResponseDTO)
+                .map(VenteResponseDTO::new)
                 .collect(Collectors.toList());
-    }
-
-    // ... Autres méthodes (getById, deleteVente...)
-
-    /**
-     * Méthode privée pour construire un DTO de réponse propre.
-     */
-    private VenteResponseDTO buildVenteResponseDTO(Vente vente) {
-        ClientDto clientDto = (vente.getClient() != null) ? new ClientDto(vente.getClient()) : null;
-
-        List<LigneVenteDto> lignesDto = vente.getLignes().stream()
-                .map(ligne -> {
-                    Produit p = produitRepos.findById(ligne.getProduitId()).orElse(null);
-                    return new LigneVenteDto(ligne, p);
-                })
-                .collect(Collectors.toList());
-
-        return new VenteResponseDTO(vente, lignesDto, clientDto);
     }
 }

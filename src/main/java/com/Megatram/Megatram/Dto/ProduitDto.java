@@ -7,8 +7,8 @@ public class ProduitDto {
     private Long id;
     private String nom;
     private String ref;
-    private int qte;
-    private double prix;
+    // private int qte; // Ancienne gestion de quantité, retirée car gérée par Stock
+    private double prix; // Prix unitaire
     private String codeBarre;
     private Long categorieId;
     private String lieuStockNom;
@@ -17,29 +17,56 @@ public class ProduitDto {
     private String categorieNom;
     private Long lieuStockId;
 
+    // Nouveaux champs pour la gestion des cartons et prix par carton
+    private int qteParCarton;
+    private double prixCarton;
 
-//    public ProduitDto() {
-//        // constructeur vide requis
-//    }
+    // Champ pour afficher la quantité en stock (vient du système de stock)
+    // Vous devrez peupler ce champ dans votre service si vous voulez l'inclure dans ce DTO
+    // private StockDto stockInfo; // Exemple si vous incluez un DTO de stock ici
 
+
+    // Constructeur vide (utile pour la désérialisation)
+    public ProduitDto() {
+    }
+
+    // Constructeur pour créer un DTO à partir de l'entité Produit
     public ProduitDto(Produit produit) {
         this.id = produit.getId();
         this.nom = produit.getNom();
         this.ref = produit.getRef();
-        this.qte = produit.getQte();
-        this.qteMin = produit.getQteMin();
-        this.prix = produit.getPrix();
+        // this.qte = produit.getQte(); // Ne plus mapper l'ancienne quantité directe
+        this.prix = produit.getPrix(); // Prix unitaire
         this.codeBarre = produit.getCodeBarre();
+        this.qteMin = produit.getQteMin();
 
-        // Gestion des cas où la catégorie ou le lieu est nul
+        // Mappage des nouveaux champs
+        this.qteParCarton = produit.getQteParCarton();
+        this.prixCarton = produit.getPrixCarton();
+
+        // Mappage des relations si elles sont chargées
         if (produit.getCategorie() != null) {
+            this.categorieId = produit.getCategorie().getId();
             this.categorieNom = produit.getCategorie().getNom();
+        } else {
+            this.categorieId = null;
+            this.categorieNom = null;
         }
 
         if (produit.getLieuStock() != null) {
-            this.lieuStockNom = String.valueOf(produit.getLieuStock().getNom());
+            this.lieuStockId = produit.getLieuStock().getId();
+            this.lieuStockNom = produit.getLieuStock().getNom();
+        } else {
+            this.lieuStockId = null;
+            this.lieuStockNom = null;
         }
+
+        // Si vous incluez StockDto, vous devrez le peupler ici en appelant le StockService
+        // this.stockInfo = stockService.getStockForProduitAndLieu(produit, produit.getLieuStock()); // Exemple
     }
+
+
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -65,13 +92,9 @@ public class ProduitDto {
         this.ref = ref;
     }
 
-    public int getQte() {
-        return qte;
-    }
-
-    public void setQte(int qte) {
-        this.qte = qte;
-    }
+    // Le getter/setter pour l'ancienne qte est retiré
+    // public int getQte() { return qte; }
+    // public void setQte(int qte) { this.qte = qte; }
 
     public double getPrix() {
         return prix;
@@ -128,4 +151,25 @@ public class ProduitDto {
     public void setLieuStockId(Long lieuStockId) {
         this.lieuStockId = lieuStockId;
     }
+
+    // Getters et Setters pour les nouveaux champs
+    public int getQteParCarton() {
+        return qteParCarton;
+    }
+
+    public void setQteParCarton(int qteParCarton) {
+        this.qteParCarton = qteParCarton;
+    }
+
+    public double getPrixCarton() {
+        return prixCarton;
+    }
+
+    public void setPrixCarton(double prixCarton) {
+        this.prixCarton = prixCarton;
+    }
+
+    // Getter/Setter pour stockInfo si ajouté
+    // public StockDto getStockInfo() { return stockInfo; }
+    // public void setStockInfo(StockDto stockInfo) { this.stockInfo = stockInfo; }
 }

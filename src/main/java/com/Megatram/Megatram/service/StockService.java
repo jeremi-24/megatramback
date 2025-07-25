@@ -1,10 +1,18 @@
 package com.Megatram.Megatram.service;
 
+import com.Megatram.Megatram.Dto.StockDto;
+import com.Megatram.Megatram.Entity.LieuStock;
+import com.Megatram.Megatram.Entity.Produit;
+import com.Megatram.Megatram.Entity.Stock;
+import com.Megatram.Megatram.repository.LieuStockRepository;
 import com.Megatram.Megatram.repository.ProduitRepos;
 import com.Megatram.Megatram.repository.StockRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class StockService {
@@ -12,85 +20,69 @@ public class StockService {
     @Autowired
     private StockRepository stockRepository;
 
-    @Autowired
-    private ProduitRepos produitRepository;
+    public Optional<Stock> findStockByProduitAndLieuStock(Produit produit, LieuStock lieuStock) {
+        return stockRepository.findByProduitAndLieuStock(produit, lieuStock);
+    }
 
+    public Stock addStock(Produit produit, LieuStock lieuStock, int quantiteTotaleAjoutee) {
+        // CORRIGÉ: On vérifie si la qte est une valeur > 0, pas si elle est null.
+        if (produit.getQteParCarton() <= 0) {
+            throw new IllegalArgumentException("La quantité par carton pour le produit " + produit.getNom() + " doit être supérieure à 0.");
+        }
+        
+        Stock stock = findStockByProduitAndLieuStock(produit, lieuStock)
+                .orElseGet(() -> {
+                    Stock newStock = new Stock();
+                    newStock.setProduit(produit);
+                    newStock.setLieuStock(lieuStock);
+                    newStock.setQteCartons(0);
+                    newStock.setQteUnitesRestantes(0);
+                    return newStock;
+                });
 
+        int ancienneQuantiteTotale = (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
+        int nouvelleQuantiteTotale = ancienneQuantiteTotale + quantiteTotaleAjoutee;
 
+        stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
+        stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
 
-//    public List<StockDto> getEtatStockParNoms(String produitNom, String entrepotNom, Date dateLimite) {
-//        Produit produit = produitRepository.findByNom(produitNom)
-//                .orElseThrow(() -> new RuntimeException("Produit introuvable"));
-//        Entrepot entrepot = entrepotRepository.findByNom(entrepotNom)
-//                .orElseThrow(() -> new RuntimeException("Entrepôt introuvable"));
-//
-//        return getEtatStockParProduitEtEntrepot(produit.getId(), entrepot.getId(), dateLimite);
-//    }
-//
-//
-//    public List<StockDto> getEtatGlobalParEntrepotNom(String entrepotNom, Date dateLimite) {
-//        Entrepot entrepot = entrepotRepository.findByNom(entrepotNom)
-//                .orElseThrow(() -> new RuntimeException("Entrepôt introuvable"));
-//
-//        return getEtatGlobalParEntrepot(entrepot.getId(), dateLimite);
-//    }
-//
+        return stockRepository.save(stock);
+    }
 
+    public Stock removeStock(Produit produit, LieuStock lieuStock, int quantiteTotaleRetiree) {
+        // CORRIGÉ: On vérifie si la qte est une valeur > 0, pas si elle est null.
+        if (produit.getQteParCarton() <= 0) {
+            throw new IllegalArgumentException("La quantité par carton pour le produit " + produit.getNom() + " doit être supérieure à 0.");
+        }
 
+        Stock stock = findStockByProduitAndLieuStock(produit, lieuStock)
+                .orElseThrow(() -> new RuntimeException("Stock non trouvé pour le produit : " + produit.getNom() + " dans le lieu : " + lieuStock.getNom()));
+
+        int ancienneQuantiteTotale = (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
+
+        if (ancienneQuantiteTotale < quantiteTotaleRetiree) {
+            throw new RuntimeException("Quantité insuffisante en stock pour le produit : " + produit.getNom());
+        }
+        
+        int nouvelleQuantiteTotale = ancienneQuantiteTotale - quantiteTotaleRetiree;
+        stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
+        stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
+        return stockRepository.save(stock);
+    }
+
+    public List<StockDto> getAllStocks() {
+        return stockRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    public StockDto getStockById(Long id) {
+        return stockRepository.findById(id).map(this::convertToDto).orElse(null);
+    }
+
+    public void deleteStock(Long id) {
+        stockRepository.deleteById(id);
+    }
+
+    private StockDto convertToDto(Stock stock) {
+        return new StockDto(stock);
+    }
 }
-//
-//public List<StockDto> getAllStocks() {
-//    return stockRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
-//}
-//
-//public StockDto getStockById(Long id) {
-//    return stockRepository.findById(id).map(this::convertToDto).orElse(null);
-//}
-//
-//    public StockDto createStock(StockDto dto) {
-//        Produit produit = produitRepository.findByNom(dto.getProduitNom());
-//        Entrepot entrepot = entrepotRepository.findByNom(dto.getEntrepotNom());
-//
-//        if (produit == null || entrepot == null) return null;
-//
-//        Stock stock = new Stock();
-//        stock.setProduit(produit);
-//        stock.setEntrepot(entrepot);
-//        stock.setQuantite(dto.getProduitQte());
-//        stock.setDate(dto.getDate());
-//
-//        return convertToDto(stockRepository.save(stock));
-//    }
-//
-//    public StockDto updateStock(Long id, StockDto dto) {
-//        Optional<Stock> optional = stockRepository.findById(id);
-//        if (optional.isEmpty()) return null;
-//
-//        Stock stock = optional.get();
-//        Produit produit = produitRepository.findByNom(dto.getProduitNom());
-//        Entrepot entrepot = entrepotRepository.findByNom(dto.getEntrepotNom());
-//
-//        if (produit == null || entrepot == null) return null;
-//
-//        stock.setProduit(produit);
-//        stock.setEntrepot(entrepot);
-//        stock.setQuantite(dto.getProduitQte());
-//        stock.setDate(dto.getDate());
-//
-//        return convertToDto(stockRepository.save(stock));
-//    }
-//
-//    public void deleteStock(Long id) {
-//        stockRepository.deleteById(id);
-//    }
-//
-//    private StockDto convertToDto(Stock stock) {
-//        StockDto dto = new StockDto();
-//        dto.setId(stock.getId());
-//        dto.setProduitNom(stock.getProduit().getNom());
-//        dto.setProduitQte(stock.getQuantite());
-//        dto.setEntrepotNom(stock.getEntrepot().getNom());
-//        dto.setDate(stock.getDate());
-//        return dto;
-//    }
-//}

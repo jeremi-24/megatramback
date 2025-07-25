@@ -1,6 +1,6 @@
 package com.Megatram.Megatram.Dto;
 
-import com.Megatram.Megatram.enums.BonLivraisonStatus;
+import com.Megatram.Megatram.enums.BonLivraisonStatus; // Cet import n'est plus nécessaire ici
 import com.Megatram.Megatram.enums.StatutCommande;
 
 import java.time.LocalDateTime;
@@ -14,11 +14,12 @@ public class CommandeResponseDTO {
     private ClientDto client;
     private LieuStockDTO lieuLivraison;
     private double totalCommande;
-
     private List<LigneCommandeResponseDTO> lignes;
 
+    // CORRIGÉ : Le statut du BL est une simple chaîne de caractères dans un DTO
+    private String statutBonLivraison;
 
-//    private BonLivraisonStatus statutBonLivraison;
+    // --- Getters et Setters ---
 
     public Long getId() {
         return id;
@@ -60,14 +61,6 @@ public class CommandeResponseDTO {
         this.lieuLivraison = lieuLivraison;
     }
 
-    public List<LigneCommandeResponseDTO> getLignes() {
-        return lignes;
-    }
-
-    public void setLignes(List<LigneCommandeResponseDTO> lignes) {
-        this.lignes = lignes;
-    }
-
     public double getTotalCommande() {
         return totalCommande;
     }
@@ -76,6 +69,21 @@ public class CommandeResponseDTO {
         this.totalCommande = totalCommande;
     }
 
-    public void setStatutBonLivraison(BonLivraisonStatus statut) {
+    public List<LigneCommandeResponseDTO> getLignes() {
+        return lignes;
+    }
+
+    public void setLignes(List<LigneCommandeResponseDTO> lignes) {
+        this.lignes = lignes;
+    }
+
+    // CORRIGÉ : Getter pour le champ String
+    public String getStatutBonLivraison() {
+        return statutBonLivraison;
+    }
+
+    // CORRIGÉ : Le setter accepte maintenant une String, ce qui correspond à l'appel dans le service
+    public void setStatutBonLivraison(String statut) {
+        this.statutBonLivraison = statut;
     }
 }

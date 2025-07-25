@@ -1,8 +1,6 @@
 package com.Megatram.Megatram.Entity;
 
-import com.Megatram.Megatram.enums.TypeMouvement;
 import jakarta.persistence.*;
-import java.util.Date;
 
 @Entity
 public class Stock {
@@ -12,28 +10,20 @@ public class Stock {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "produit_id", nullable = false)
+    @JoinColumn(name = "produit_id", nullable = false, unique = true) // Assurons l'unicité du stock par produit/lieu
     private Produit produit;
 
     @ManyToOne
     @JoinColumn(name = "LieuStock_id", nullable = false)
     private LieuStock lieuStock;
 
-    private int quantte;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date date;
-
-    @PrePersist
-    protected void onCreate() {
-        if (date == null) {
-            date = new Date();
-        }
-    }
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TypeMouvement type;
+    private int qteCartons;
+
+    @Column(nullable = false)
+    private int qteUnitesRestantes;
+
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -59,28 +49,19 @@ public class Stock {
         this.lieuStock = lieuStock;
     }
 
-    public int getQuantte() {
-        return quantte;
+    public int getQteCartons() {
+        return qteCartons;
     }
 
-    public void setQuantte(int quantte) {
-        this.quantte = quantte;
+    public void setQteCartons(int qteCartons) {
+        this.qteCartons = qteCartons;
     }
 
-    public Date getDate() {
-        return date;
+    public int getQteUnitesRestantes() {
+        return qteUnitesRestantes;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
-    }
-
-    public TypeMouvement getType() {
-        return type;
-    }
-
-    public void setType(TypeMouvement type) {
-        this.type = type;
+    public void setQteUnitesRestantes(int qteUnitesRestantes) {
+        this.qteUnitesRestantes = qteUnitesRestantes;
     }
 }
-

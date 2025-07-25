@@ -1,78 +1,59 @@
 package com.Megatram.Megatram.Dto;
 
+import com.Megatram.Megatram.Entity.BonLivraison;
 import com.Megatram.Megatram.Entity.LieuStock;
-import com.Megatram.Megatram.enums.BonLivraisonStatus;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-
-import java.time.LocalDateTime;
+import java.time.LocalDateTime; // DOIT être LocalDateTime
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BonLivraisonResponseDTO {
 
     private Long id;
-    private LocalDateTime dateLivraison;
+    private LocalDateTime dateLivraison; // DOIT être LocalDateTime
     private Long commandeId;
     private List<LigneLivraisonDTO> lignesLivraison;
-    private BonLivraisonStatus statut;
+    private String status;
     private LieuStock lieuStock;
     private String email;
 
-
-    public String getEmail() {
-        return email;
+    public BonLivraisonResponseDTO() {
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public BonLivraisonResponseDTO(BonLivraison bonLivraison) {
+        this.id = bonLivraison.getId();
+        this.dateLivraison = bonLivraison.getDateLivraison(); // Le type correspond, pas de conversion
+
+        if (bonLivraison.getCommande() != null) {
+            this.commandeId = bonLivraison.getCommande().getId();
+        }
+
+        // CORRIGÉ: Utilise getStatut() qui existe sur l'entité
+        if (bonLivraison.getStatut() != null) {
+            this.status = bonLivraison.getStatut().name();
+        }
+
+        if (bonLivraison.getLignesLivraison() != null) {
+            this.lignesLivraison = bonLivraison.getLignesLivraison().stream()
+                    .map(LigneLivraisonDTO::new)
+                    .collect(Collectors.toList());
+        }
+
+        this.lieuStock = bonLivraison.getLieuStock();
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getDateLivraison() {
-        return dateLivraison;
-    }
-
-    public void setDateLivraison(LocalDateTime dateLivraison) {
-        this.dateLivraison = dateLivraison;
-    }
-
-    public Long getCommandeId() {
-        return commandeId;
-    }
-
-    public void setCommandeId(Long commandeId) {
-        this.commandeId = commandeId;
-    }
-
-    public List<LigneLivraisonDTO> getLignesLivraison() {
-        return lignesLivraison;
-    }
-
-    public void setLignesLivraison(List<LigneLivraisonDTO> lignesLivraison) {
-        this.lignesLivraison = lignesLivraison;
-    }
-
-
-    public BonLivraisonStatus getStatut() {
-        return statut;
-    }
-
-    public void setStatut(BonLivraisonStatus statut) {
-        this.statut = statut;
-    }
-
-    public LieuStock getLieuStock() {
-        return lieuStock;
-    }
-
-    public void setLieuStock(LieuStock lieuStock) {
-        this.lieuStock = lieuStock;
-    }
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public LocalDateTime getDateLivraison() { return dateLivraison; } // Type correct
+    public void setDateLivraison(LocalDateTime dateLivraison) { this.dateLivraison = dateLivraison; } // Type correct
+    public Long getCommandeId() { return commandeId; }
+    public void setCommandeId(Long commandeId) { this.commandeId = commandeId; }
+    public List<LigneLivraisonDTO> getLignesLivraison() { return lignesLivraison; }
+    public void setLignesLivraison(List<LigneLivraisonDTO> lignesLivraison) { this.lignesLivraison = lignesLivraison; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public LieuStock getLieuStock() { return lieuStock; }
+    public void setLieuStock(LieuStock lieuStock) { this.lieuStock = lieuStock; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

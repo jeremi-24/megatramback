@@ -19,6 +19,13 @@ public enum PermissionType {
     LIVRAISON_GENERATE("Générer un bon de livraison"),
     LIVRAISON_READ("Consulter les bons de livraison"),
     LIVRAISON_VALIDATE("Valider une livraison et sortir le stock (action du magasinier)"),
+    LIVRAISON_DELETE ("Supprimer une livraison"),
+
+    // --- Gestion des Clients ---
+    CLIENT_CREATE("Créer un client"),
+    CLIENT_READ("Lire les informations d'un client"),
+    CLIENT_UPDATE("Mettre à jour un client"),
+    CLIENT_DELETE("Supprimer un client"), // <--- VIRGULE AJOUTÉE ICI
 
     // --- Gestion des Ventes & Factures ---
     FACTURE_GENERATE("Générer une facture"),
@@ -34,9 +41,6 @@ public enum PermissionType {
 
     // --- Gestion des Rapports (DG / Contrôleur) ---
     REPORT_VIEW("Voir les rapports de performance");
-
-
-
 
     private final String description;
 

@@ -1,55 +1,37 @@
 package com.Megatram.Megatram.Dto;
 
-import com.Megatram.Megatram.Entity.Produit;
-
-import java.util.Date;
+import com.Megatram.Megatram.Entity.Stock;
 
 public class StockDto {
 
     private Long id;
-    private  String produitNom;
-    private  String entrepotNom;
-    private int quantte;
-    private Date date;
+    private String produitNom;
+    private String lieuStockNom;
+    private int qteCartons;
+    private int qteUnitesRestantes;
 
-
-    public Long getId() {
-        return id;
+    public StockDto() {
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    // Ce constructeur est maintenant valide car l'entité Stock a les bonnes méthodes
+    public StockDto(Stock stock) {
+        this.id = stock.getId();
+        this.produitNom = stock.getProduit().getNom();
+        this.lieuStockNom = stock.getLieuStock().getNom();
+        this.qteCartons = stock.getQteCartons();
+        this.qteUnitesRestantes = stock.getQteUnitesRestantes();
     }
 
-    public String getProduitNom() {
-        return produitNom;
-    }
+    // Getters and Setters
 
-    public void setProduitNom(String produitNom) {
-        this.produitNom = produitNom;
-    }
-
-    public String getEntrepotNom() {
-        return entrepotNom;
-    }
-
-    public void setEntrepotNom(String entrepotNom) {
-        this.entrepotNom = entrepotNom;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
-
-    public int getQuantte() {
-        return quantte;
-    }
-
-    public void setQuantte(int quantte) {
-        this.quantte = quantte;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getProduitNom() { return produitNom; }
+    public void setProduitNom(String produitNom) { this.produitNom = produitNom; }
+    public String getLieuStockNom() { return lieuStockNom; }
+    public void setLieuStockNom(String lieuStockNom) { this.lieuStockNom = lieuStockNom; }
+    public int getQteCartons() { return qteCartons; }
+    public void setQteCartons(int qteCartons) { this.qteCartons = qteCartons; }
+    public int getQteUnitesRestantes() { return qteUnitesRestantes; }
+    public void setQteUnitesRestantes(int qteUnitesRestantes) { this.qteUnitesRestantes = qteUnitesRestantes; }
 }

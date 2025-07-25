@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize; // Importer PreAuthorize
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,21 +23,28 @@ public class InventaireController {
 
     @Operation(summary = "post inventaire")
     @PostMapping
-    public ResponseEntity<InventaireResponseDto> creerInventaire(@RequestBody InventaireRequestDto request,
-                                                                 @RequestParam(defaultValue = "false") boolean premier) {
-        InventaireResponseDto response = inventaireService.enregistrerInventaire(request, premier);
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE')") // Basé sur la permission INVENTAIRE_MANAGE
+    public ResponseEntity<InventaireResponseDto> creerInventaire(@RequestBody InventaireRequestDto request) {
+        InventaireResponseDto response = inventaireService.enregistrerInventaire(request);
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Récupère tous les inventaires") // Ajouter summary
     @GetMapping
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE')") // Basé sur la permission INVENTAIRE_MANAGE pour lire
     public ResponseEntity<List<InventaireResponseDto>> getAllInventaires() {
         List<InventaireResponseDto> inventaires = inventaireService.recupererTousLesInventaires();
         return ResponseEntity.ok(inventaires);
     }
 
+    @Operation(summary = "Récupère un inventaire par son ID") // Ajouter summary
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE')") // Basé sur la permission INVENTAIRE_MANAGE pour lire
     public ResponseEntity<InventaireResponseDto> getInventaire(@PathVariable Long id) {
         InventaireResponseDto response = inventaireService.getInventaireById(id);
         return ResponseEntity.ok(response);
     }
+
+    // Si une méthode de suppression pour les inventaires existe ou est ajoutée,
+    // elle devrait également avoir une annotation @PreAuthorize('INVENTAIRE_MANAGE') ou similaire.
 }

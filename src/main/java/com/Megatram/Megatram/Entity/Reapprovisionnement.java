@@ -1,11 +1,10 @@
 package com.Megatram.Megatram.Entity;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
+import java.util.List; // Importer List
 
 @Entity
-
 public class Reapprovisionnement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,7 +15,11 @@ public class Reapprovisionnement {
 
     private LocalDateTime date = LocalDateTime.now();
 
+    // AJOUTÉ : La relation manquante vers les lignes
+    @OneToMany(mappedBy = "reapprovisionnement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LigneReapprovisionnement> lignes;
 
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -47,5 +50,14 @@ public class Reapprovisionnement {
 
     public void setDate(LocalDateTime date) {
         this.date = date;
+    }
+
+    // AJOUTÉ : Le getter et setter pour la nouvelle relation
+    public List<LigneReapprovisionnement> getLignes() {
+        return lignes;
+    }
+
+    public void setLignes(List<LigneReapprovisionnement> lignes) {
+        this.lignes = lignes;
     }
 }

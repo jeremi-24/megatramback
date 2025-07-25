@@ -12,13 +12,21 @@ public class LigneReapprovisionnement  {
     @ManyToOne
     private Reapprovisionnement reapprovisionnement;
 
+    // Remplacer le champ produit par la relation ManyToOne
+    // private Produit produit;
+
+    // Nouvelle relation Many-to-One vers l'entité Produit
     @ManyToOne
+    @JoinColumn(name = "produit_id") // Assurez-vous que c'est le bon nom de colonne
     private Produit produit;
 
-    private int qteAjoutee;
+    private int qteAjoutee; // Cette quantité dépend de typeQuantite ("CARTON" ou "UNITE")
 
     @ManyToOne
     private LieuStock lieuStock;
+
+    // Champ pour stocker le type de quantité ("CARTON" ou "UNITE")
+    private String typeQuantite;
 
 
     public Long getId() {
@@ -37,6 +45,7 @@ public class LigneReapprovisionnement  {
         this.reapprovisionnement = reapprovisionnement;
     }
 
+    // Getter/Setter pour la relation Produit
     public Produit getProduit() {
         return produit;
     }
@@ -59,5 +68,13 @@ public class LigneReapprovisionnement  {
 
     public void setLieuStock(LieuStock lieuStock) {
         this.lieuStock = lieuStock;
+    }
+
+    public String getTypeQuantite() {
+        return typeQuantite;
+    }
+
+    public void setTypeQuantite(String typeQuantite) {
+        this.typeQuantite = typeQuantite;
     }
 }

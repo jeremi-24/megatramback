@@ -11,7 +11,7 @@ import java.util.List;
 public interface BonLivraisonRepository extends JpaRepository<BonLivraison, Long> {
     // Par exemple, trouver un bon de livraison par sa commande
     // Optional<BonLivraison> findByCommandeId(Long commandeId);
-
+    List<BonLivraison> findByLieuStockId(Long lieuId);
     List<BonLivraison> findByCommande_LieuStock_Id(Long lieuId);
     boolean existsByCommandeId(Long commandeId);
 }

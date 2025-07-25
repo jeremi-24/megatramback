@@ -4,10 +4,17 @@ public class ProduitRequestDTO {
 
     private String nom;
     private String ref;
-    private double prix;
+    private double prix; // Prix unitaire
     private int qteMin;
-    private Long categorieId; // L'ID de la catégorie
-    private Long lieuStockId; // L'ID du lieu de stockage
+    private Long categorieId;
+    private Long lieuStockId;
+
+    // Nouveaux champs pour la gestion des cartons et prix par carton
+    private int qteParCarton;
+    private double prixCarton;
+
+
+    // Getters and Setters
 
     public String getNom() {
         return nom;
@@ -55,5 +62,22 @@ public class ProduitRequestDTO {
 
     public void setLieuStockId(Long lieuStockId) {
         this.lieuStockId = lieuStockId;
+    }
+
+    // Getters et Setters pour les nouveaux champs
+    public int getQteParCarton() {
+        return qteParCarton;
+    }
+
+    public void setQteParCarton(int qteParCarton) {
+        this.qteParCarton = qteParCarton;
+    }
+
+    public double getPrixCarton() {
+        return prixCarton;
+    }
+
+    public void setPrixCarton(double prixCarton) {
+        this.prixCarton = prixCarton;
     }
 }
