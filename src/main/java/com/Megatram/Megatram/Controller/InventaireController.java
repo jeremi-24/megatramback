@@ -23,7 +23,7 @@ public class InventaireController {
 
     @Operation(summary = "post inventaire")
     @PostMapping
-    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE')") // Basé sur la permission INVENTAIRE_MANAGE
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')") // Basé sur la permission INVENTAIRE_MANAGE
     public ResponseEntity<InventaireResponseDto> creerInventaire(@RequestBody InventaireRequestDto request) {
         InventaireResponseDto response = inventaireService.enregistrerInventaire(request);
         return ResponseEntity.ok(response);
@@ -31,7 +31,7 @@ public class InventaireController {
 
     @Operation(summary = "Récupère tous les inventaires") // Ajouter summary
     @GetMapping
-    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE')") // Basé sur la permission INVENTAIRE_MANAGE pour lire
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')") // Basé sur les permissions INVENTAIRE_MANAGE et INVENTAIRE_READ ") // Basé sur la permission INVENTAIRE_MANAGE pour lire
     public ResponseEntity<List<InventaireResponseDto>> getAllInventaires() {
         List<InventaireResponseDto> inventaires = inventaireService.recupererTousLesInventaires();
         return ResponseEntity.ok(inventaires);
@@ -39,7 +39,7 @@ public class InventaireController {
 
     @Operation(summary = "Récupère un inventaire par son ID") // Ajouter summary
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE')") // Basé sur la permission INVENTAIRE_MANAGE pour lire
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')") // Basé sur la permission INVENTAIRE_MANAGE pour lire
     public ResponseEntity<InventaireResponseDto> getInventaire(@PathVariable Long id) {
         InventaireResponseDto response = inventaireService.getInventaireById(id);
         return ResponseEntity.ok(response);

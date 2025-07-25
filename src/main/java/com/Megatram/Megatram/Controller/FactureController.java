@@ -29,7 +29,7 @@ public class FactureController {
 
     @Operation(summary = "Génère une nouvelle facture pour une commande validée")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT')") // Seuls les admins ou la secrétaire peuvent générer des factures
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT') or hasAnyRole('ADMIN')") // Seuls les admins ou la secrétaire peuvent générer des factures
     public ResponseEntity<?> genererFacture(
             @Parameter(description = "ID de la commande à facturer", required = true)
             @RequestParam Long commandeId) {
@@ -48,7 +48,7 @@ public class FactureController {
 
     @Operation(summary = "Récupère la liste de toutes les factures")
     @GetMapping
-  //  @PreAuthorize("hasAnyRole('ADMIN', 'DG', 'CONTROLEUR')") // Seuls les rôles de supervision peuvent tout voir
+   @PreAuthorize("hasAnyRole('ADMIN', 'DG', 'CONTROLEUR')") // Seuls les rôles de supervision peuvent tout voir
     public ResponseEntity<List<FactureResponseDTO>> getAllFactures() {
         List<FactureResponseDTO> factures = factureService.getAllFactures();
         return ResponseEntity.ok(factures);

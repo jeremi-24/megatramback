@@ -29,7 +29,7 @@ public class ReapprovisionnementController {
 
     @Operation(summary = "Enregistre un nouveau réapprovisionnement")
     @PostMapping
-    @PreAuthorize("hasAuthority('REAPPRO_MANAGE')") // Basé sur la permission REAPPRO_MANAGE
+    @PreAuthorize("hasAuthority('REAPPRO_MANAGE') or hasAnyRole('ADMIN')") // Basé sur la permission REAPPRO_MANAGE
     public ResponseEntity<ReapprovisionnementResponseDto> enregistrer(@RequestBody ReapprovisionnementRequestDto request) {
         ReapprovisionnementResponseDto response = reapproService.enregistrerReapprovisionnement(request);
         return ResponseEntity.ok(response);
@@ -37,14 +37,14 @@ public class ReapprovisionnementController {
 
     @Operation(summary = "Récupère tous les réapprovisionnements")
     @GetMapping
-    @PreAuthorize("hasAuthority('REAPPRO_MANAGE')") // Basé sur la permission REAPPRO_MANAGE pour lire
+    @PreAuthorize("hasAuthority('REAPPRO_MANAGE') or hasAnyRole('ADMIN')") // Basé sur la permission REAPPRO_MANAGE pour lire
     public List<ReapprovisionnementResponseDto> getAll() {
         return reapproService.getAllReapprovisionnements();
     }
 
     @Operation(summary = "Récupère un réapprovisionnement par son ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('REAPPRO_MANAGE')") // Basé sur la permission REAPPRO_MANAGE pour lire
+    @PreAuthorize("hasAuthority('REAPPRO_MANAGE')or hasAnyRole('ADMIN')") // Basé sur la permission REAPPRO_MANAGE pour lire
     public ResponseEntity<ReapprovisionnementDetailsDto> getById(@PathVariable Long id) {
         try {
             ReapprovisionnementDetailsDto response = reapproService.getDetails(id);
@@ -56,7 +56,7 @@ public class ReapprovisionnementController {
 
     @Operation(summary = "Supprime un réapprovisionnement par son ID")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('REAPPRO_MANAGE')") // Basé sur la permission REAPPRO_MANAGE pour supprimer
+    @PreAuthorize("hasAuthority('REAPPRO_MANAGE') or hasAnyRole('ADMIN')") // Basé sur la permission REAPPRO_MANAGE pour supprimer
     public ResponseEntity<Void> deleteReapprovisionnement(@PathVariable Long id) {
         try {
             reapproService.deleteReapprovisionnement(id);

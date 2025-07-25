@@ -41,7 +41,7 @@ public class ProduitController {
 
     @Operation(summary = "Crée un nouveau produit")
     @PostMapping
-    @PreAuthorize("hasAuthority('PRODUIT_CREATE')") // Basé sur la permission PRODUIT_CREATE
+    @PreAuthorize("hasAuthority('PRODUIT_CREATE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_CREATE
     public ResponseEntity<ProduitDto> createProduit(@RequestBody ProduitRequestDTO requestDto) {
         ProduitDto nouveauProduit = produitService.createProduit(requestDto);
         return new ResponseEntity<>(nouveauProduit, HttpStatus.CREATED);
@@ -49,7 +49,7 @@ public class ProduitController {
 
     @Operation(summary = "Met à jour un produit existant par son ID")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUIT_UPDATE')") // Basé sur la permission PRODUIT_UPDATE
+    @PreAuthorize("hasAuthority('PRODUIT_UPDATE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_UPDATE
     public ResponseEntity<ProduitDto> updateProduit(@PathVariable Long id, @RequestBody ProduitRequestDTO requestDto) {
         ProduitDto produitMisAJour = produitService.updateProduit(id, requestDto);
         return ResponseEntity.ok(produitMisAJour);
@@ -57,7 +57,7 @@ public class ProduitController {
 
     @Operation(summary = "Assigner catégorie et lieu de stock à plusieurs produits") // Ajouter summary
     @PutMapping("/assignation")
-    @PreAuthorize("hasAuthority('PRODUIT_UPDATE')") // L'assignation est une forme de mise à jour
+    @PreAuthorize("hasAuthority('PRODUIT_UPDATE') or hasAnyRole('ADMIN')") // L'assignation est une forme de mise à jour
     public ResponseEntity<String> assignerCategorieEtLieuStock(@RequestBody AssignationProduitsDTO dto) {
             try {
                 produitService.assignerCategorieEtEntrepot(dto);
@@ -72,7 +72,7 @@ public class ProduitController {
 
     @Operation(summary = "Récupère la liste de tous les produits")
     @GetMapping
-    @PreAuthorize("hasAuthority('PRODUIT_READ')") // Basé sur la permission PRODUIT_READ
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_READ
     public ResponseEntity<List<ProduitDto>> getAllProduits() {
         List<ProduitDto> produits = produitService.getAllProduits();
         return ResponseEntity.ok(produits);
@@ -80,7 +80,7 @@ public class ProduitController {
 
     @Operation(summary = "Récupère un produit par son ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUIT_READ')") // Basé sur la permission PRODUIT_READ
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_READ
     public ResponseEntity<ProduitDto> getProduitById(@PathVariable Long id) {
         try {
             ProduitDto produit = produitService.getProduitById(id);
@@ -92,7 +92,7 @@ public class ProduitController {
 
     @Operation(summary = "Recherche un produit par son code-barres")
     @GetMapping("/code/{codeBarre}")
-    @PreAuthorize("hasAuthority('PRODUIT_READ')") // La lecture par code-barres est une forme de lecture
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // La lecture par code-barres est une forme de lecture
     public ResponseEntity<?> getProduitByCodeBarre(@PathVariable String codeBarre) {
         try {
             ProduitDto produit = produitService.getProduitByCodeBarre(codeBarre);
@@ -104,7 +104,7 @@ public class ProduitController {
 
     @Operation(summary = "Supprime un produit par son ID")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUIT_DELETE')") // Basé sur la permission PRODUIT_DELETE
+    @PreAuthorize("hasAuthority('PRODUIT_DELETE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_DELETE
     public ResponseEntity<Void> deleteProduit(@PathVariable Long id) {
         try {
             produitService.deleteProduit(id);
@@ -116,7 +116,7 @@ public class ProduitController {
 
     @Operation(summary = "Supprime plusieurs produits par leurs IDs")
     @DeleteMapping
-    @PreAuthorize("hasAuthority('PRODUIT_DELETE')") // Basé sur la permission PRODUIT_DELETE
+    @PreAuthorize("hasAuthority('PRODUIT_DELETE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_DELETE
     public ResponseEntity<?> deleteMultipleProduits(@RequestBody List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return ResponseEntity.badRequest().body("La liste des IDs ne peut pas être vide.");
@@ -131,7 +131,7 @@ public class ProduitController {
 
     @Operation(summary = "Importe des produits depuis un fichier Excel (.xlsx)")
     @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAuthority('PRODUIT_IMPORT')") // Basé sur la permission PRODUIT_IMPORT
+    @PreAuthorize("hasAuthority('PRODUIT_IMPORT') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_IMPORT
     public ResponseEntity<?> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
         try {
             List<ProduitDto> produits = produitService.importProduitsFromExcel(file);
@@ -149,7 +149,7 @@ public class ProduitController {
 
     @Operation(summary = "Récupère l'image PNG d'un code-barres de produit")
     @GetMapping("/code/{codeBarre}/image")
-    @PreAuthorize("hasAuthority('PRODUIT_READ')") // L'accès à l'image nécessite de pouvoir lire le produit
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // L'accès à l'image nécessite de pouvoir lire le produit
     public ResponseEntity<Resource> getBarcodeImage(@PathVariable String codeBarre) {
         try {
             Path barcodePath = Paths.get("barcodes").resolve(codeBarre + ".png");
@@ -169,7 +169,7 @@ public class ProduitController {
 
     @Operation(summary = "Recherche des produits") // Ajouter summary
     @GetMapping("/search")
-    @PreAuthorize("hasAuthority('PRODUIT_READ')") // La recherche est une forme de lecture
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // La recherche est une forme de lecture
     public ResponseEntity<List<ProduitDto>> searchProduits(@RequestParam("q") String query) {
         List<ProduitDto> produits = produitService.searchProduits(query);
         if (produits.isEmpty()) {

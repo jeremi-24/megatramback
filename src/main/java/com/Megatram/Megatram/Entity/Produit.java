@@ -36,6 +36,16 @@ public class Produit {
 
     // Getters and Setters
 
+
+    @PrePersist
+    public void genererCodeBarre() {
+        if (this.codeBarre == null || this.codeBarre.isEmpty()) {
+            String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(); // ex: "A1B2C3D4"
+            this.codeBarre = "PROD-" + suffix;
+        }
+    }
+
+
     public Long getId() {
         return id;
     }
