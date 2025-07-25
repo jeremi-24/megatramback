@@ -100,7 +100,7 @@ public class BonLivraisonController {
 
     @Operation(summary = "Récupère les bons de livraison pour le lieu concerné (Magasinier)")
     @GetMapping("/bons")
-    @PreAuthorize("hasAuthority('LIVRAISON_READ')")
+    @PreAuthorize("hasAuthority('LIVRAISON_READ') or hasAnyRole('ADMIN')")
     public ResponseEntity<List<BonLivraisonResponseDTO>> getBonsLivraisonMagasinier() {
         Utilisateur magasinier = utilisateurService.getUtilisateurConnecte();
 
