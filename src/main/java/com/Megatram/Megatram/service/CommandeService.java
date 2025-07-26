@@ -105,12 +105,11 @@ public class CommandeService {
         FactureResponseDTO factureDto = factureService.genererFacturePourCommande(commandeValidee.getId());
         BonLivraisonResponseDTO bonLivraisonDto = bonLivraisonService.genererBonLivraison(commandeValidee.getId());
         // CORRIGÉ: Le nom de la méthode est validerETALivrer
-        BonLivraisonResponseDTO bonLivraisonValide = bonLivraisonService.validerETALivrer(bonLivraisonDto.getId(), agentEmail);
 
         return new ValidationResponse(
-                convertToResponseDTOAvecBonLivraison(commandeValidee, bonLivraisonValide),
+                convertToResponseDTOAvecBonLivraison(commandeValidee, bonLivraisonDto),
                 factureDto,
-                bonLivraisonValide
+                bonLivraisonDto
         );
     }
 

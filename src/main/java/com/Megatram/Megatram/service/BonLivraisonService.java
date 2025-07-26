@@ -1,4 +1,5 @@
 package com.Megatram.Megatram.service;
+import com.Megatram.Megatram.Entity.LigneCommande;
 
 import com.Megatram.Megatram.Dto.BonLivraisonResponseDTO;
 import com.Megatram.Megatram.Dto.LigneLivraisonDTO;
@@ -44,18 +45,37 @@ public class BonLivraisonService {
     public BonLivraisonResponseDTO genererBonLivraison(Long commandeId) {
         Commande commande = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new EntityNotFoundException("Commande non trouvée avec l'ID : " + commandeId));
-
+    
         BonLivraison bonLivraison = new BonLivraison();
         bonLivraison.setCommande(commande);
         bonLivraison.setDateLivraison(LocalDateTime.now());
         bonLivraison.setStatut(BonLivraisonStatus.EN_ATTENTE);
-        
-        // La logique pour créer les lignes de livraison à partir des lignes de commande irait ici
-        // ...
-
+        bonLivraison.setLieuStock(commande.getLieuStock()); // On récupère directement le lieu du magasinier
+    
         BonLivraison savedBonLivraison = bonLivraisonRepository.save(bonLivraison);
+    
+        // Créer les lignes de livraison
+        if (commande.getLignes() != null) {
+            for (LigneCommande ligneCommande : commande.getLignes()) {
+    
+                Produit produit = produitRepos.findById(ligneCommande.getProduitId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Produit non trouvé avec l'ID : " + ligneCommande.getProduitId()
+                        ));
+    
+                LigneLivraison ligneLivraison = new LigneLivraison();
+                ligneLivraison.setProduit(produit);
+                ligneLivraison.setQteLivre(ligneCommande.getQteVoulu());
+                ligneLivraison.setBonLivraison(savedBonLivraison);
+    
+                ligneLivraisonRepository.save(ligneLivraison);
+            }
+        }
+    
         return new BonLivraisonResponseDTO(savedBonLivraison);
     }
+    
+    
 
     public BonLivraisonResponseDTO validerETALivrer(Long bonLivraisonId, String agentEmail) {
         BonLivraison bonLivraison = bonLivraisonRepository.findById(bonLivraisonId)
