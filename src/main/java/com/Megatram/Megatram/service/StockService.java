@@ -20,16 +20,18 @@ public class StockService {
     @Autowired
     private StockRepository stockRepository;
 
+    @Autowired
+    private ProduitRepos produitRepos; // Injecter ProduitRepos
+
     public Optional<Stock> findStockByProduitAndLieuStock(Produit produit, LieuStock lieuStock) {
         return stockRepository.findByProduitAndLieuStock(produit, lieuStock);
     }
 
     public Stock addStock(Produit produit, LieuStock lieuStock, int quantiteTotaleAjoutee) {
-        // CORRIGÉ: On vérifie si la qte est une valeur > 0, pas si elle est null.
         if (produit.getQteParCarton() <= 0) {
             throw new IllegalArgumentException("La quantité par carton pour le produit " + produit.getNom() + " doit être supérieure à 0.");
         }
-        
+
         Stock stock = findStockByProduitAndLieuStock(produit, lieuStock)
                 .orElseGet(() -> {
                     Stock newStock = new Stock();
@@ -50,7 +52,6 @@ public class StockService {
     }
 
     public Stock removeStock(Produit produit, LieuStock lieuStock, int quantiteTotaleRetiree) {
-        // CORRIGÉ: On vérifie si la qte est une valeur > 0, pas si elle est null.
         if (produit.getQteParCarton() <= 0) {
             throw new IllegalArgumentException("La quantité par carton pour le produit " + produit.getNom() + " doit être supérieure à 0.");
         }
@@ -63,7 +64,7 @@ public class StockService {
         if (ancienneQuantiteTotale < quantiteTotaleRetiree) {
             throw new RuntimeException("Quantité insuffisante en stock pour le produit : " + produit.getNom());
         }
-        
+
         int nouvelleQuantiteTotale = ancienneQuantiteTotale - quantiteTotaleRetiree;
         stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
         stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
@@ -80,6 +81,26 @@ public class StockService {
 
     public void deleteStock(Long id) {
         stockRepository.deleteById(id);
+    }
+
+    // Nouvelle méthode pour calculer la quantité totale globale par produit
+    public int getQuantiteTotaleGlobaleByProduit(Long produitId) {
+        Optional<Produit> produitOpt = produitRepos.findById(produitId);
+        if (!produitOpt.isPresent()) {
+            // Gérer le cas où le produit n'est pas trouvé, peut-être retourner 0 ou lancer une exception
+            // Pour l'instant, retournons 0 pour éviter de bloquer l'affichage si un produit est supprimé mais toujours référencé ailleurs.
+            return 0; 
+        }
+        Produit produit = produitOpt.get();
+
+        List<Stock> stocks = stockRepository.findByProduit(produit);
+        int quantiteTotaleGlobale = 0;
+
+        for (Stock stock : stocks) {
+            quantiteTotaleGlobale += (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
+        }
+
+        return quantiteTotaleGlobale;
     }
 
     private StockDto convertToDto(Stock stock) {

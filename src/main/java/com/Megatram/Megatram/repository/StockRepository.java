@@ -13,12 +13,8 @@ import java.util.Optional;
 
 public interface StockRepository extends JpaRepository<Stock, Long> {
 
-    // CORRIGÉ : Cette méthode est supprimée car le champ 'date' n'existe plus dans l'entité Stock.
-    // List<Stock> findByLieuStock_IdAndDateBefore(Long lieuStockId, Date date);
-
-    // CORRIGÉ : Cette méthode est également supprimée car elle dépend du champ 'date'.
-    // List<Stock> findByProduit_IdAndLieuStock_IdAndDateBefore(Long produitId, Long lieuStockId, Date date);
-
-    // Cette méthode est correcte et utilisée par votre StockService, on la garde.
     Optional<Stock> findByProduitAndLieuStock(Produit produit, LieuStock lieuStock);
+
+    // Nouvelle méthode pour trouver tous les stocks par produit
+    List<Stock> findByProduit(Produit produit);
 }
