@@ -11,7 +11,7 @@ public class VenteDto {
     private String ref;
     private String caissier;
     private String clientNom;
-    private long clientId;
+    private Long clientId;
     private double paiement;
     private List<LigneVenteDto> lignes;
 
@@ -52,7 +52,7 @@ public class VenteDto {
         this.clientNom = clientNom;
     }
 
-    public long getClientId() {
+    public Long getClientId() {
         return clientId;
     }
 

@@ -15,6 +15,7 @@ public class LigneVenteDto {
     private int qteVendueUnites;
     private int qteVendueTotaleUnites;
     private double total;
+    private String codeProduit;
 
     public LigneVenteDto() {
     }
@@ -30,6 +31,7 @@ public class LigneVenteDto {
         if (produit != null) {
             this.produitId = produit.getId();
             this.produitNom = produit.getNom();
+            this.codeProduit = produit.getCodeBarre();
             if (produit.getQteParCarton() > 0) {
                 if ("CARTON".equalsIgnoreCase(this.typeQuantite)) {
                     this.qteVendueCartons = this.qteVendueDansLigne;
@@ -128,5 +130,13 @@ public class LigneVenteDto {
 
     public void setTotal(double total) {
         this.total = total;
+    }
+
+    public String getCodeProduit() {
+        return codeProduit;
+    }
+
+    public void setCodeProduit(String codeProduit) {
+        this.codeProduit = codeProduit;
     }
 }

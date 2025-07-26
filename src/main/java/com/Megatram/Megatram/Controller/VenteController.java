@@ -34,7 +34,7 @@ public class VenteController {
     public ResponseEntity<?> creerVenteDirecte(@RequestBody VenteDto venteDto, Principal principal) {
         try {
             // On passe l'email de l'agent connecté comme "caissier"
-            VenteResponseDTO venteCreee = venteService.creerVenteDirecte(venteDto, principal.getName());
+            VenteResponseDTO venteCreee = venteService.createVenteDirecte(venteDto, principal.getName());
             return new ResponseEntity<>(venteCreee, HttpStatus.CREATED);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
