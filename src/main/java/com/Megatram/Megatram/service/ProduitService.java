@@ -57,10 +57,10 @@ public class ProduitService {
      */
     public ProduitDto createProduit(ProduitRequestDTO dto) {
         Categorie categorie = categorieRep.findById(dto.getCategorieId())
-                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l\'ID : " + dto.getCategorieId()));
+                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
 
         LieuStock lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
-                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l\'ID : " + dto.getLieuStockId()));
+                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
 
         Produit produit = new Produit();
         produit.setNom(dto.getNom());
@@ -82,18 +82,18 @@ public class ProduitService {
     }
 
     /**
-     * Met à jour les informations d\'un produit, y compris quantité par carton et prix par carton.
-     * Note: La quantité en stock n\'est pas modifiée ici.
+     * Met à jour les informations d'un produit, y compris quantité par carton et prix par carton.
+     * Note: La quantité en stock n'est pas modifiée ici.
      */
     public ProduitDto updateProduit(Long id, ProduitRequestDTO dto) {
         Produit produitToUpdate = produitRepos.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé pour la mise à jour : " + id));
 
         Categorie categorie = categorieRep.findById(dto.getCategorieId())
-                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l\'ID : " + dto.getCategorieId()));
+                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
 
         LieuStock lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
-                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l\'ID : " + dto.getLieuStockId()));
+                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
 
         produitToUpdate.setNom(dto.getNom());
         produitToUpdate.setRef(dto.getRef());
@@ -114,20 +114,17 @@ public class ProduitService {
      * Récupère un produit par son ID.
      */
     @Transactional(readOnly = true)
-    public ProduitDto getProduitById(Long id) {
-        Produit produit = produitRepos.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec l\'ID : " + id));
-        return new ProduitDto(produit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
+    public Produit getProduitEntityById(Long id) { // Changer le type de retour pour retourner l'entité
+        return produitRepos.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec l'ID : " + id));
     }
 
     /**
      * Récupère la liste de tous les produits.
      */
     @Transactional(readOnly = true)
-    public List<ProduitDto> getAllProduits() {
-        return produitRepos.findAll().stream()
-                .map(ProduitDto::new) // Utiliser le constructeur de ProduitDto
-                .collect(Collectors.toList());
+    public List<Produit> getAllProduitEntities() { // Changer le type de retour pour retourner la liste d'entités
+        return produitRepos.findAll();
     }
 
     /**
@@ -135,14 +132,13 @@ public class ProduitService {
      * Lance une exception si non trouvé, qui sera gérée par le contrôleur.
      */
     @Transactional(readOnly = true)
-    public ProduitDto getProduitByCodeBarre(String codeBarre) {
-        Produit produit = produitRepos.findByCodeBarre(codeBarre)
+    public Produit getProduitEntityByCodeBarre(String codeBarre) { // Changer le type de retour pour retourner l'entité
+        return produitRepos.findByCodeBarre(codeBarre)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec le code-barres : " + codeBarre));
-        return new ProduitDto(produit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
     }
 
     /**
-     * Supprime un produit et l\'image de son code-barres.
+     * Supprime un produit et l'image de son code-barres.
      */
     public void deleteProduit(Long id) {
         Produit produit = produitRepos.findById(id)
@@ -340,16 +336,8 @@ public class ProduitService {
 
 
     //RECHERCHE (adapter mapToDto)
-    public List<ProduitDto> searchProduits(String searchTerm) {
-        List<Produit> produits = produitRepos.searchProduits(searchTerm);
-        return produits.stream()
-                .map(this::mapToDto) // Utiliser mapToDto
-                .collect(Collectors.toList());
-    }
-
-    private ProduitDto mapToDto(Produit produit) {
-        // Utiliser le constructeur de ProduitDto au lieu de mapper manuellement
-        return new ProduitDto(produit);
+    public List<Produit> searchProduitEntities(String searchTerm) { // Changer le type de retour pour retourner la liste d'entités
+        return produitRepos.searchProduits(searchTerm);
     }
 
 
@@ -385,6 +373,4 @@ public class ProduitService {
 
         produitRepos.saveAll(produits);
     }
-
-
 }

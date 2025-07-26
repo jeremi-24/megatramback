@@ -1,10 +1,12 @@
 package com.Megatram.Megatram.Controller;
 
 import com.Megatram.Megatram.Dto.AssignationProduitsDTO;
-import com.Megatram.Megatram.Dto.ProduitDto;
+import com.Megatram.Megatram.Dto.ProduitAdminDto; // Importer le nouveau DTO
 import com.Megatram.Megatram.Dto.ProduitRequestDTO;
+import com.Megatram.Megatram.Dto.ProduitDto;
 import com.Megatram.Megatram.Entity.Produit;
 import com.Megatram.Megatram.service.ProduitService;
+import com.Megatram.Megatram.service.StockService; // Importer StockService
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
@@ -33,58 +35,73 @@ import java.util.stream.Collectors;
 public class ProduitController {
 
     private final ProduitService produitService;
+    private final StockService stockService; // Injecter StockService
 
     @Autowired
-    public ProduitController(ProduitService produitService) {
+    public ProduitController(ProduitService produitService, StockService stockService) {
         this.produitService = produitService;
+        this.stockService = stockService; // Assigner StockService
     }
 
     @Operation(summary = "Crée un nouveau produit")
     @PostMapping
-    @PreAuthorize("hasAuthority('PRODUIT_CREATE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_CREATE
-    public ResponseEntity<ProduitDto> createProduit(@RequestBody ProduitRequestDTO requestDto) {
-        ProduitDto nouveauProduit = produitService.createProduit(requestDto);
-        return new ResponseEntity<>(nouveauProduit, HttpStatus.CREATED);
+    @PreAuthorize("hasAuthority('PRODUIT_CREATE') or hasAnyRole('ADMIN')")
+    public ResponseEntity<ProduitAdminDto> createProduit(@RequestBody ProduitRequestDTO requestDto) {
+        ProduitDto nouveauProduitDto = produitService.createProduit(requestDto);
+        ProduitAdminDto nouveauProduitAdminDto = new ProduitAdminDto(produitService.getProduitEntityById(nouveauProduitDto.getId()));
+        nouveauProduitAdminDto.setQuantiteTotaleGlobale(stockService.getQuantiteTotaleGlobaleByProduit(nouveauProduitDto.getId()));
+        return new ResponseEntity<>(nouveauProduitAdminDto, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Met à jour un produit existant par son ID")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUIT_UPDATE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_UPDATE
-    public ResponseEntity<ProduitDto> updateProduit(@PathVariable Long id, @RequestBody ProduitRequestDTO requestDto) {
-        ProduitDto produitMisAJour = produitService.updateProduit(id, requestDto);
-        return ResponseEntity.ok(produitMisAJour);
+    @PreAuthorize("hasAuthority('PRODUIT_UPDATE') or hasAnyRole('ADMIN')")
+    public ResponseEntity<ProduitAdminDto> updateProduit(@PathVariable Long id, @RequestBody ProduitRequestDTO requestDto) {
+        ProduitDto produitMisAJourDto = produitService.updateProduit(id, requestDto);
+        ProduitAdminDto produitMisAJourAdminDto = new ProduitAdminDto(produitService.getProduitEntityById(produitMisAJourDto.getId()));
+        produitMisAJourAdminDto.setQuantiteTotaleGlobale(stockService.getQuantiteTotaleGlobaleByProduit(produitMisAJourDto.getId()));
+        return ResponseEntity.ok(produitMisAJourAdminDto);
     }
 
-    @Operation(summary = "Assigner catégorie et lieu de stock à plusieurs produits") // Ajouter summary
+    @Operation(summary = "Assigner catégorie et lieu de stock à plusieurs produits")
     @PutMapping("/assignation")
-    @PreAuthorize("hasAuthority('PRODUIT_UPDATE') or hasAnyRole('ADMIN')") // L'assignation est une forme de mise à jour
+    @PreAuthorize("hasAuthority('PRODUIT_UPDATE') or hasAnyRole('ADMIN')")
     public ResponseEntity<String> assignerCategorieEtLieuStock(@RequestBody AssignationProduitsDTO dto) {
-            try {
-                produitService.assignerCategorieEtEntrepot(dto);
-                return ResponseEntity.ok("Assignation effectuée avec succès.");
-            } catch (EntityNotFoundException | IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(e.getMessage());
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Une erreur est survenue lors de l'assignation.");
-            }
+        try {
+            produitService.assignerCategorieEtEntrepot(dto);
+            return ResponseEntity.ok("Assignation effectuée avec succès.");
+        } catch (EntityNotFoundException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Une erreur est survenue lors de l'assignation.");
         }
+    }
 
     @Operation(summary = "Récupère la liste de tous les produits")
     @GetMapping
-    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN','BOUTIQUIER')") // Basé sur la permission PRODUIT_READ
-    public ResponseEntity<List<ProduitDto>> getAllProduits() {
-        List<ProduitDto> produits = produitService.getAllProduits();
-        return ResponseEntity.ok(produits);
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN','BOUTIQUIER')")
+    public ResponseEntity<List<ProduitAdminDto>> getAllProduits() {
+        List<Produit> produits = produitService.getAllProduitEntities();
+        List<ProduitAdminDto> produitAdminDtos = produits.stream()
+                .map(produit -> {
+                    ProduitAdminDto dto = new ProduitAdminDto(produit);
+                    dto.setQuantiteTotaleGlobale(stockService.getQuantiteTotaleGlobaleByProduit(produit.getId()));
+                    return dto;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(produitAdminDtos);
     }
 
     @Operation(summary = "Récupère un produit par son ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_READ
-    public ResponseEntity<ProduitDto> getProduitById(@PathVariable Long id) {
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')")
+    public ResponseEntity<ProduitAdminDto> getProduitById(@PathVariable Long id) {
         try {
-            ProduitDto produit = produitService.getProduitById(id);
-            return ResponseEntity.ok(produit);
+            Produit produit = produitService.getProduitEntityById(id);
+            ProduitAdminDto produitAdminDto = new ProduitAdminDto(produit);
+            produitAdminDto.setQuantiteTotaleGlobale(stockService.getQuantiteTotaleGlobaleByProduit(id));
+            return ResponseEntity.ok(produitAdminDto);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
@@ -92,11 +109,13 @@ public class ProduitController {
 
     @Operation(summary = "Recherche un produit par son code-barres")
     @GetMapping("/code/{codeBarre}")
-    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // La lecture par code-barres est une forme de lecture
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')")
     public ResponseEntity<?> getProduitByCodeBarre(@PathVariable String codeBarre) {
         try {
-            ProduitDto produit = produitService.getProduitByCodeBarre(codeBarre);
-            return ResponseEntity.ok(produit);
+            Produit produit = produitService.getProduitEntityByCodeBarre(codeBarre);
+            ProduitAdminDto produitAdminDto = new ProduitAdminDto(produit);
+            produitAdminDto.setQuantiteTotaleGlobale(stockService.getQuantiteTotaleGlobaleByProduit(produit.getId()));
+            return ResponseEntity.ok(produitAdminDto);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -104,7 +123,7 @@ public class ProduitController {
 
     @Operation(summary = "Supprime un produit par son ID")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUIT_DELETE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_DELETE
+    @PreAuthorize("hasAuthority('PRODUIT_DELETE') or hasAnyRole('ADMIN')")
     public ResponseEntity<Void> deleteProduit(@PathVariable Long id) {
         try {
             produitService.deleteProduit(id);
@@ -116,7 +135,7 @@ public class ProduitController {
 
     @Operation(summary = "Supprime plusieurs produits par leurs IDs")
     @DeleteMapping
-    @PreAuthorize("hasAuthority('PRODUIT_DELETE') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_DELETE
+    @PreAuthorize("hasAuthority('PRODUIT_DELETE') or hasAnyRole('ADMIN')")
     public ResponseEntity<?> deleteMultipleProduits(@RequestBody List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return ResponseEntity.badRequest().body("La liste des IDs ne peut pas être vide.");
@@ -131,7 +150,7 @@ public class ProduitController {
 
     @Operation(summary = "Importe des produits depuis un fichier Excel (.xlsx)")
     @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAuthority('PRODUIT_IMPORT') or hasAnyRole('ADMIN')") // Basé sur la permission PRODUIT_IMPORT
+    @PreAuthorize("hasAuthority('PRODUIT_IMPORT') or hasAnyRole('ADMIN')")
     public ResponseEntity<?> importProduitsFromExcel(@RequestParam("file") MultipartFile file) {
         try {
             List<ProduitDto> produits = produitService.importProduitsFromExcel(file);
@@ -149,7 +168,7 @@ public class ProduitController {
 
     @Operation(summary = "Récupère l'image PNG d'un code-barres de produit")
     @GetMapping("/code/{codeBarre}/image")
-    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // L'accès à l'image nécessite de pouvoir lire le produit
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')")
     public ResponseEntity<Resource> getBarcodeImage(@PathVariable String codeBarre) {
         try {
             Path barcodePath = Paths.get("barcodes").resolve(codeBarre + ".png");
@@ -167,14 +186,21 @@ public class ProduitController {
         }
     }
 
-    @Operation(summary = "Recherche des produits") // Ajouter summary
+    @Operation(summary = "Recherche des produits")
     @GetMapping("/search")
-    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')") // La recherche est une forme de lecture
-    public ResponseEntity<List<ProduitDto>> searchProduits(@RequestParam("q") String query) {
-        List<ProduitDto> produits = produitService.searchProduits(query);
-        if (produits.isEmpty()) {
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')")
+    public ResponseEntity<List<ProduitAdminDto>> searchProduits(@RequestParam("q") String query) {
+        List<Produit> produits = produitService.searchProduitEntities(query);
+        List<ProduitAdminDto> produitAdminDtos = produits.stream()
+                .map(produit -> {
+                    ProduitAdminDto dto = new ProduitAdminDto(produit);
+                    dto.setQuantiteTotaleGlobale(stockService.getQuantiteTotaleGlobaleByProduit(produit.getId()));
+                    return dto;
+                })
+                .collect(Collectors.toList());
+        if (produitAdminDtos.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(produits);
+        return ResponseEntity.ok(produitAdminDtos);
     }
 }
