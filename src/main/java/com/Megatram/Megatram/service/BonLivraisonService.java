@@ -65,6 +65,9 @@ public class BonLivraisonService {
     
                 LigneLivraison ligneLivraison = new LigneLivraison();
                 ligneLivraison.setProduit(produit);
+                ligneLivraison.setProduitPrix(ligneCommande.getProduitPrix());
+                ligneLivraison.setTotalLivraison(ligneCommande.getProduitPrix() * ligneCommande.getQteVoulu());
+
                 ligneLivraison.setQteLivre(ligneCommande.getQteVoulu());
                 ligneLivraison.setBonLivraison(savedBonLivraison);
     
