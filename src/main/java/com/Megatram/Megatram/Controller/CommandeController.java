@@ -6,6 +6,7 @@ import com.Megatram.Megatram.Entity.Commande;
 import com.Megatram.Megatram.Entity.LieuStock;
 import com.Megatram.Megatram.repository.CommandeRepository;
 import com.Megatram.Megatram.service.CommandeService;
+import com.Megatram.Megatram.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,6 +36,9 @@ public class CommandeController {
     @Autowired
     private CommandeRepository commandeRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Operation(summary = "Créer une nouvelle commande", description = "Crée une nouvelle commande avec un statut 'EN_ATTENTE'. Le lieu de livraison est déterminé automatiquement à partir des produits.")
     @PreAuthorize("hasAuthority('COMMANDE_CREATE') or hasAnyRole('ADMIN','BOUTIQUIER','MAGASINIER','SECRETARIAT')")
     @ApiResponses(value = {
@@ -48,6 +52,14 @@ public class CommandeController {
                     content = @Content(schema = @Schema(implementation = CommandeRequestDTO.class)))
             @RequestBody CommandeRequestDTO requestDTO) {
         CommandeResponseDTO nouvelleCommande = commandeService.creerCommande(requestDTO);
+
+        try {
+            notificationService.envoyerNotification("/topic/secretariat", "Nouvelle commande !"  );
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'envoi de la notification WebSocket : " + e.getMessage());
+            // Log the exception properly instead of printing to stderr
+        }
+
         return new ResponseEntity<>(nouvelleCommande, HttpStatus.CREATED);
     }
 
@@ -70,13 +82,26 @@ public class CommandeController {
     }
 
 
+
     @PreAuthorize("hasAuthority('COMMANDE_VALIDATE') or hasAnyRole('ADMIN','SECRETARIAT')")
-    @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
-    @PostMapping("/{id}/valider")
-    public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
-        CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
-        return ResponseEntity.ok(response);
+@Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
+@PostMapping("/{id}/valider")
+public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
+    CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
+
+    try {
+        notificationService.envoyerNotification(
+            "/topic/magasinier", 
+            "Un bon de livraison a été émis pour la commande #" + id + ", veuillez le valider."
+        );
+    } catch (Exception e) {
+        System.err.println("Erreur lors de l'envoi de la notification WebSocket : " + e.getMessage());
+        // Optionnel : logger proprement avec un logger
     }
+
+    return ResponseEntity.ok(response);
+}
+
 
     @PreAuthorize("hasAuthority('COMMANDE_CANCEL') or hasAnyRole('ADMIN')")
     @Operation(summary = "annuler une commande")

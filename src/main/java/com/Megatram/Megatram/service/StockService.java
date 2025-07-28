@@ -21,11 +21,30 @@ public class StockService {
     private StockRepository stockRepository;
 
     @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
     private ProduitRepos produitRepos; // Injecter ProduitRepos
 
     public Optional<Stock> findStockByProduitAndLieuStock(Produit produit, LieuStock lieuStock) {
         return stockRepository.findByProduitAndLieuStock(produit, lieuStock);
     }
+
+    // Nouvelle méthode pour vérifier et notifier le stock
+    private void verifierEtNotifierProduit(Produit produit, int seuilTolerance) {
+        int stockTotal = getQuantiteTotaleGlobaleByProduit(produit.getId()); // total en stock
+    
+        if (stockTotal <= produit.getQteMin() + seuilTolerance) {
+            try {
+                String message = "Attention, le stock du produit '" + produit.getNom() + "' est proche du seuil minimal (" 
+                                 + stockTotal + " unités restantes). Veuillez vérifier et réapprovisionner.";
+                notificationService.envoyerNotification("/app", message);
+            } catch (Exception e) {
+                System.err.println("Erreur lors de l'envoi de la notification WebSocket : " + e.getMessage());
+            }
+        }
+    }
+    
 
     public Stock addStock(Produit produit, LieuStock lieuStock, int quantiteTotaleAjoutee) {
         if (produit.getQteParCarton() <= 0) {
@@ -48,6 +67,7 @@ public class StockService {
         stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
         stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
 
+        verifierEtNotifierProduit(produit, 10); // Appel de la méthode pour vérifier et notifier
         return stockRepository.save(stock);
     }
 
@@ -68,6 +88,8 @@ public class StockService {
         int nouvelleQuantiteTotale = ancienneQuantiteTotale - quantiteTotaleRetiree;
         stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
         stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
+       
+        verifierEtNotifierProduit(produit, 10); // Appel de la méthode pour vérifier et notifier
         return stockRepository.save(stock);
     }
 
