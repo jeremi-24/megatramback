@@ -315,7 +315,7 @@ public class ProduitService {
         try {
             Files.createDirectories(barcodeStoragePath);
             Path fichier = barcodeStoragePath.resolve(barcodeText + ".png");
-            BitMatrix matrix = new MultiFormatWriter().encode(barcodeText, BarcodeFormat.CODE_128, 200, 150);
+            BitMatrix matrix = new MultiFormatWriter().encode(barcodeText, BarcodeFormat.CODE_128, 200, 130);
             MatrixToImageWriter.writeToPath(matrix, "PNG", fichier);
         } catch (Exception e) {
             System.out.println("Erreur code-barres: " + e.getMessage());
