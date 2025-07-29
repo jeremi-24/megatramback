@@ -24,7 +24,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // Exemple: http://localhost:8080/ws-notifications
         registry.addEndpoint("/ws-notifications")
                 // On autorise les connexions depuis votre application frontend (React, Angular, etc.)
-                .setAllowedOrigins("http://erp.megatram.biz")
+                //.setAllowedOrigins("http://erp.megatram.biz")
+                .setAllowedOrigins("http://erp.megatram.biz","https://3000-firebase-studio-1750809039432.cluster-l6vkdperq5ebaqo3qy4ksvoqom.cloudworkstations.dev")
                 // withSockJS() fournit une solution de repli (fallback) pour les anciens navigateurs
                 // qui ne supportent pas les WebSockets natifs. C'est une bonne pratique.
                 .withSockJS();
