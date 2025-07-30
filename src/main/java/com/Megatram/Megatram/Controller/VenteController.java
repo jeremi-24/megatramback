@@ -50,5 +50,21 @@ public class VenteController {
         return ResponseEntity.ok(venteService.getAllVentes());
     }
 
+    @Operation(summary = "Annuler une vente et restaurer les stocks")
+    @DeleteMapping("/annuler/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BOUTIQUIER')")
+    public ResponseEntity<?> annulerVente(@PathVariable Long id) {
+        try {
+            venteService.annulerVente(id);
+            return ResponseEntity.ok("Vente annulée avec succès.");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Vente non trouvée : " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Erreur lors de l'annulation : " + e.getMessage());
+        }
+    }
+    
+
+
     // ... autres endpoints (getById, delete...) si nécessaires
 }

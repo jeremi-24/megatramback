@@ -32,6 +32,9 @@ public class CommandeService {
     private FactureService factureService;
     @Autowired
     private BonLivraisonService bonLivraisonService;
+    @Autowired
+private NotificationService notificationService;
+
 
     @Transactional
     public CommandeResponseDTO creerCommande(CommandeRequestDTO requestDTO) {
@@ -75,6 +78,11 @@ public class CommandeService {
         commande.setLignes(lignes);
 
         Commande savedCommande = commandeRepository.save(commande);
+        notificationService.envoyerNotification(
+    "/topic/secretariat",
+    null, 
+    "Nouvelle commande #" + savedCommande.getId() + " créée par le client " + client.getNom() + "."
+);
         return convertToResponseDTO(savedCommande);
     }
 
@@ -105,6 +113,22 @@ public class CommandeService {
         FactureResponseDTO factureDto = factureService.genererFacturePourCommande(commandeValidee.getId());
         BonLivraisonResponseDTO bonLivraisonDto = bonLivraisonService.genererBonLivraison(commandeValidee.getId());
         // CORRIGÉ: Le nom de la méthode est validerETALivrer
+        Long clientId = commande.getClient().getId();
+
+        notificationService.envoyerNotification(
+    "/topic/magasinier",
+    null, // Pas de userId spécifique
+    "Un bon de livraison a été émis pour la commande #" + commandeValidee.getId() + " créée par le client " +  commandeValidee.getClient().getNom() + "."
+);
+
+        notificationService.envoyerNotificationAuClient(
+    clientId,
+    "update",
+    "Votre commande a été validée.",
+    commande.getId(),
+    commande.getStatut().name()
+);
+
 
         return new ValidationResponse(
                 convertToResponseDTOAvecBonLivraison(commandeValidee, bonLivraisonDto),
@@ -132,6 +156,15 @@ public class CommandeService {
             throw new IllegalStateException("Seules les commandes EN_ATTENTE peuvent être annulées.");
         }
         commande.setStatut(StatutCommande.ANNULEE);
+        Long clientId = commande.getClient().getId();
+        notificationService.envoyerNotificationAuClient(
+    clientId,
+    "update",
+    "Votre commande a été validée.",
+    commande.getId(),
+    commande.getStatut().name()
+);
+
         commandeRepository.save(commande);
     }
 

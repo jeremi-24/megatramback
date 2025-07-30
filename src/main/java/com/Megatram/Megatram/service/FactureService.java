@@ -69,11 +69,11 @@ public class FactureService {
         String clientNom = commande.getClient().getNom().replaceAll("\\s+", "-"); // Remplace les espaces pour une URL propre
         String destinationClient = "/topic/client/" + clientNom;
         String messageClient = "Votre facture N°" + savedFacture.getId() + " pour la commande N°" + commandeId + " est maintenant disponible.";
-        notificationService.envoyerNotification(destinationClient, messageClient);
+        notificationService.envoyerNotification(destinationClient,null, messageClient);
 
         // Notification de confirmation à la secrétaire (pour son journal d'activité par exemple)
         String messageSecretaire = "Facture N°" + savedFacture.getId() + " générée avec succès pour la commande N°" + commandeId;
-        notificationService.envoyerNotification("/topic/secretariat", messageSecretaire);
+        notificationService.envoyerNotification("/topic/secretariat",null, messageSecretaire);
 
         // 4. Préparer et retourner le DTO de réponse
         List<LigneCommandeResponseDTO> lignesDto = buildLigneCommandeResponseDTOs(commande);

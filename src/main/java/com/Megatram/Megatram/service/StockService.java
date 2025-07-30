@@ -32,18 +32,21 @@ public class StockService {
 
     // Nouvelle méthode pour vérifier et notifier le stock
     private void verifierEtNotifierProduit(Produit produit, int seuilTolerance) {
-        int stockTotal = getQuantiteTotaleGlobaleByProduit(produit.getId()); // total en stock
+        int stockTotal = getQuantiteTotaleGlobaleByProduit(produit.getId());
     
         if (stockTotal <= produit.getQteMin() + seuilTolerance) {
             try {
-                String message = "Attention, le stock du produit '" + produit.getNom() + "' est proche du seuil minimal (" 
-                                 + stockTotal + " unités restantes). Veuillez vérifier et réapprovisionner.";
-                notificationService.envoyerNotification("/app", message);
+                String message = "Attention, le stock du produit '" + produit.getNom()
+                    + "' est proche du seuil minimal (" + stockTotal
+                    + " unités restantes). Veuillez vérifier et réapprovisionner.";
+    
+                notificationService.envoyerNotificationGenerale(message);
             } catch (Exception e) {
                 System.err.println("Erreur lors de l'envoi de la notification WebSocket : " + e.getMessage());
             }
         }
     }
+    
     
 
     public Stock addStock(Produit produit, LieuStock lieuStock, int quantiteTotaleAjoutee) {

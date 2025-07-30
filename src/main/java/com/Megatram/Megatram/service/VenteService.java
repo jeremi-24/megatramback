@@ -161,4 +161,38 @@ for (LigneVente ligne : lignes) {
                 .map(VenteResponseDTO::new)
                 .collect(Collectors.toList());
     }
+    
+    @Transactional
+public void annulerVente(Long venteId) {
+    Vente vente = venteRepository.findById(venteId)
+            .orElseThrow(() -> new EntityNotFoundException("Vente non trouvée avec l'ID : " + venteId));
+
+    for (LigneVente ligne : vente.getLignes()) {
+        Produit produit = ligne.getProduit();
+        String typeQuantite = ligne.getTypeQuantite();
+        int quantiteVendue = ligne.getQteVendu();
+
+        int quantiteEnUnite;
+        if ("CARTON".equalsIgnoreCase(typeQuantite)) {
+            Integer qteParCarton = produit.getQteParCarton();
+            if (qteParCarton == null || qteParCarton <= 0) {
+                throw new IllegalStateException("Produit sans quantité par carton valide : " + produit.getNom());
+            }
+            quantiteEnUnite = quantiteVendue * qteParCarton;
+        } else {
+            quantiteEnUnite = quantiteVendue;
+        }
+
+        LieuStock lieuStock = produit.getLieuStock();
+        if (lieuStock == null) {
+            throw new IllegalStateException("Lieu de stock manquant pour le produit : " + produit.getNom());
+        }
+
+        stockService.addStock(produit, lieuStock, quantiteEnUnite);
+    }
+
+    LigneVenteRepo.deleteAll(vente.getLignes());
+    venteRepository.delete(vente);
+}
+
 }

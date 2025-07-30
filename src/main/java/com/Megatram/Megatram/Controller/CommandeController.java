@@ -53,17 +53,10 @@ public class CommandeController {
             @RequestBody CommandeRequestDTO requestDTO) {
         CommandeResponseDTO nouvelleCommande = commandeService.creerCommande(requestDTO);
 
-        try {
-            notificationService.envoyerNotification("/topic/secretariat", "Nouvelle commande !"  );
-        } catch (Exception e) {
-            System.err.println("Erreur lors de l'envoi de la notification WebSocket : " + e.getMessage());
-            // Log the exception properly instead of printing to stderr
-        }
+        // Appel de notification retiré
 
         return new ResponseEntity<>(nouvelleCommande, HttpStatus.CREATED);
     }
-
-    // ... Les autres endpoints (GET, POST valider, PUT) restent fonctionnellement les mêmes mais bénéficieront de la correction ...
 
     @PreAuthorize("hasAuthority('COMMANDE_READ') or hasAnyRole('ADMIN','BOUTIQUIER','MAGASINIER','SECRETARIAT')")
     @Operation(summary = "Récupérer toutes les commandes", description = "Retourne une liste de toutes les commandes existantes.")
@@ -81,29 +74,18 @@ public class CommandeController {
         return ResponseEntity.ok(commande);
     }
 
-
-
     @PreAuthorize("hasAuthority('COMMANDE_VALIDATE') or hasAnyRole('ADMIN','SECRETARIAT')")
-@Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
-@PostMapping("/{id}/valider")
-public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
-    CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
+    @Operation(summary = "Valider une commande", description = "Valide une commande 'EN ATTENTE', génère et valide automatiquement facture et bon de livraison.")
+    @PostMapping("/{id}/valider")
+    public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathVariable Long id, Principal principal) {
+        CommandeService.ValidationResponse response = commandeService.validerCommande(id, principal.getName());
 
-    try {
-        notificationService.envoyerNotification(
-            "/topic/magasinier", 
-            "Un bon de livraison a été émis pour la commande #" + id + ", veuillez le valider."
-        );
-    } catch (Exception e) {
-        System.err.println("Erreur lors de l'envoi de la notification WebSocket : " + e.getMessage());
-        // Optionnel : logger proprement avec un logger
+        // Appel de notification retiré
+
+        return ResponseEntity.ok(response);
     }
 
-    return ResponseEntity.ok(response);
-}
-
-
-    @PreAuthorize("hasAuthority('COMMANDE_CANCEL') or hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('COMMANDE_VALIDATE') or hasAnyRole('ADMIN')")
     @Operation(summary = "annuler une commande")
     @PutMapping("/{id}/annuler")
     public ResponseEntity<?> annulerCommande(@PathVariable Long id) {
@@ -119,9 +101,6 @@ public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathV
         }
     }
 
-
-
-
     @PreAuthorize("hasAuthority('COMMANDE_UPDATE') or hasAnyRole('ADMIN')")
     @Operation(summary = "Modifier une commande existante", description = "Met à jour une commande 'EN ATTENTE'.")
     @PutMapping("/{id}")
@@ -129,11 +108,6 @@ public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathV
         CommandeResponseDTO commandeModifiee = commandeService.modifierCommande(id, commandeRequestDTO);
         return ResponseEntity.ok(commandeModifiee);
     }
-
-
-
-
-
 
     @Operation(summary = "Récupérer les commandes par ID de client",
             description = "Retourne une liste de toutes les commandes passées par un client spécifique.")
@@ -151,10 +125,6 @@ public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathV
         return ResponseEntity.ok(commandes);
     }
 
-
-
-
-    /*  METHODE DE RECHERCHE */
     @PreAuthorize("hasAuthority('COMMANDE_READ') or hasAnyRole('ADMIN')")
     @Operation(summary = "RECHERCHE")
     @GetMapping("/search")
@@ -162,8 +132,5 @@ public ResponseEntity<CommandeService.ValidationResponse> validerCommande(@PathV
         List<CommandeResponseDTO> dtoList = commandeService.rechercherCommandes(q);
         return ResponseEntity.ok(dtoList);
     }
-
-
-
 
 }
