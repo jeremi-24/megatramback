@@ -32,15 +32,17 @@ public class BonLivraisonService {
     private final LigneLivraisonRepository ligneLivraisonRepository;
     private final ProduitRepos produitRepos;
     private final StockService stockService;
+    private final VenteService venteService;
 
     @Autowired
-    public BonLivraisonService(BonLivraisonRepository bonLivraisonRepository, CommandeRepository commandeRepository, LigneLivraisonRepository ligneLivraisonRepository, ProduitRepos produitRepos, StockService stockService) {
-        this.bonLivraisonRepository = bonLivraisonRepository;
-        this.commandeRepository = commandeRepository;
-        this.ligneLivraisonRepository = ligneLivraisonRepository;
-        this.produitRepos = produitRepos;
-        this.stockService = stockService;
-    }
+public BonLivraisonService(BonLivraisonRepository bonLivraisonRepository, CommandeRepository commandeRepository, LigneLivraisonRepository ligneLivraisonRepository, ProduitRepos produitRepos, StockService stockService, VenteService venteService) {
+    this.bonLivraisonRepository = bonLivraisonRepository;
+    this.commandeRepository = commandeRepository;
+    this.ligneLivraisonRepository = ligneLivraisonRepository;
+    this.produitRepos = produitRepos;
+    this.stockService = stockService;
+    this.venteService = venteService; 
+}
 
     public BonLivraisonResponseDTO genererBonLivraison(Long commandeId) {
         Commande commande = commandeRepository.findById(commandeId)
@@ -96,40 +98,45 @@ public class BonLivraisonService {
     public BonLivraisonResponseDTO validerEtLivrer(Long bonLivraisonId, String agentEmail) {
         BonLivraison bonLivraison = bonLivraisonRepository.findById(bonLivraisonId)
                 .orElseThrow(() -> new EntityNotFoundException("Bon de Livraison non trouvé avec l'ID : " + bonLivraisonId));
-
+    
         if (bonLivraison.getStatut() != BonLivraisonStatus.A_LIVRER) {
              throw new IllegalStateException("Le bon de livraison n'est pas au statut A_LIVRER pour la validation finale.");
         }
-
+    
+        // ... (La logique de déstockage reste la même)
         if (bonLivraison.getLignesLivraison() != null) {
             for (LigneLivraison ligne : bonLivraison.getLignesLivraison()) {
                 Produit produit = ligne.getProduit();
                 LieuStock lieuStock = produit.getLieuStock();
-
+    
                 if (lieuStock == null) {
                      throw new IllegalStateException("Le produit '" + produit.getNom() + "' n'a pas de lieu de stock attribué.");
                 }
-
+    
                 int quantiteALivrer = ligne.getQteLivre();
-                int qteParCarton = produit.getQteParCarton();
-
+                Integer qteParCarton = produit.getQteParCarton();
                 int quantiteTotaleALivrerEnUnites;
-
+    
                 if ("CARTON".equalsIgnoreCase(ligne.getTypeQuantite())) {
-                    if (qteParCarton <= 0) {
+                    if (qteParCarton == null || qteParCarton <= 0) {
                         throw new IllegalStateException("Le produit '" + produit.getNom() + "' n'a pas une quantité par carton valide.");
                     }
                     quantiteTotaleALivrerEnUnites = quantiteALivrer * qteParCarton;
                 } else {
                     quantiteTotaleALivrerEnUnites = quantiteALivrer;
                 }
-
+    
                 stockService.removeStock(produit, lieuStock, quantiteTotaleALivrerEnUnites);
             }
         }
-
+    
         bonLivraison.setStatut(BonLivraisonStatus.LIVRE);
         BonLivraison updatedBonLivraison = bonLivraisonRepository.save(bonLivraison);
+        
+       
+        venteService.creerVenteDepuisBonLivraison(updatedBonLivraison, agentEmail);
+        // ------------------------------------------
+    
         return new BonLivraisonResponseDTO(updatedBonLivraison);
     }
 

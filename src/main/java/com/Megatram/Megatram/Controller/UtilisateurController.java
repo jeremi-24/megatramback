@@ -231,6 +231,39 @@ public class UtilisateurController {
         return ResponseEntity.ok(roles);
     }
 
+    @Operation(summary = "Modifier un utilisateur par son ID (Admin)",
+            description = "Permet à un administrateur de modifier les informations d'un utilisateur spécifique. Nécessite la permission 'USER_MANAGE' ou le rôle 'ADMIN'.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur modifié avec succès",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UtilisateurResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide (ex: ID invalide, données de mise à jour incorrectes)", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Accès refusé. L'utilisateur n'a pas les droits nécessaires.", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé avec l'ID spécifié", content = @Content)
+    })
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('USER_MANAGE') or hasRole('ADMIN')")
+    public ResponseEntity<UtilisateurResponseDTO> updateUtilisateur(@PathVariable Long id, @RequestBody UtilisateurRequestDTO requestDTO) {
+        UtilisateurResponseDTO updatedUtilisateur = utilisateurService.updateUser(id, requestDTO);
+        return ResponseEntity.ok(updatedUtilisateur);
+    }
+
+    @Operation(summary = "Supprimer un utilisateur par son ID (Admin)",
+            description = "Permet à un administrateur de supprimer un utilisateur spécifique. Nécessite la permission 'USER_MANAGE' ou le rôle 'ADMIN'.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Utilisateur supprimé avec succès"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé. L'utilisateur n'a pas les droits nécessaires.", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé avec l'ID spécifié", content = @Content)
+    })
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('USER_MANAGE') or hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUtilisateur(@PathVariable Long id) {
+        utilisateurService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
+
 
 
 }
+

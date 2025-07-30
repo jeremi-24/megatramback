@@ -41,31 +41,44 @@ public class VenteService {
         if (venteRepository.existsByCommande_Id(commande.getId())) {
             return;
         }
-
+    
         Vente vente = new Vente();
         vente.setClient(commande.getClient());
         vente.setCaissier(agentEmail);
         vente.setRef("VENTE-CMD-" + commande.getId());
-
+    
         List<LigneVente> lignesVente = new ArrayList<>();
+        double totalVente = 0.0; // 🔢 Initialisation du total
+    
         for (LigneLivraison ligneLivraison : bl.getLignesLivraison()) {
             LigneVente ligneVente = new LigneVente();
-            
+    
             Produit produit = ligneLivraison.getProduit(); 
             if (produit == null) {
                 throw new EntityNotFoundException("Produit non trouvé pour la ligne de livraison id=" + ligneLivraison.getId());
             }
+    
             ligneVente.setProduit(produit);
             ligneVente.setQteVendu(ligneLivraison.getQteLivre());
             ligneVente.setProduitPrix(ligneLivraison.getProduitPrix());
             ligneVente.setTypeQuantite(ligneLivraison.getTypeQuantite());
             ligneVente.setVente(vente);
+    
+            // 💰 Calcul du total pour cette ligne
+            double totalLigne = ligneVente.getProduitPrix() * ligneVente.getQteVendu();
+            ligneVente.setTotal(totalLigne);
+    
+            totalVente += totalLigne;
+    
             lignesVente.add(ligneVente);
         }
+    
         vente.setLignes(lignesVente);
+        vente.setTotal(totalVente); // ✅ total appliqué ici
+    
         venteRepository.save(vente);
     }
-
+    
 
     /**
      * CORRIGÉ : Cette méthode correspond maintenant aux DTOs sécurisés attendus du frontend.
@@ -128,7 +141,15 @@ public class VenteService {
             ligne.setTypeQuantite(ligneDto.getTypeQuantite());
             lignes.add(ligne);
         }
+
+        double totalVente = 0.0;
+for (LigneVente ligne : lignes) {
+    double totalLigne = ligne.getProduitPrix() * ligne.getQteVendu();
+    ligne.setTotal(totalLigne);
+    totalVente += totalLigne;
+}
         vente.setLignes(lignes);
+        vente.setTotal(totalVente);
 
         Vente savedVente = venteRepository.save(vente);
         return new VenteResponseDTO(savedVente);
