@@ -80,7 +80,7 @@ private NotificationService notificationService;
         Commande savedCommande = commandeRepository.save(commande);
         notificationService.envoyerNotification(
     "/topic/secretariat",
-    2, 
+    2L, 
     "Nouvelle commande #" + savedCommande.getId() + " créée par le client " + client.getNom() + "."
 );
         return convertToResponseDTO(savedCommande);
