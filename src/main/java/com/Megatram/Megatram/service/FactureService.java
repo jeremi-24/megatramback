@@ -73,7 +73,7 @@ public class FactureService {
 
         // Notification de confirmation à la secrétaire (pour son journal d'activité par exemple)
         String messageSecretaire = "Facture N°" + savedFacture.getId() + " générée avec succès pour la commande N°" + commandeId;
-        notificationService.envoyerNotification("/topic/secretariat",null, messageSecretaire);
+        notificationService.envoyerNotification("/topic/secretariat",2, messageSecretaire);
 
         // 4. Préparer et retourner le DTO de réponse
         List<LigneCommandeResponseDTO> lignesDto = buildLigneCommandeResponseDTOs(commande);

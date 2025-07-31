@@ -1,4 +1,5 @@
 package com.Megatram.Megatram.controller;
+import com.Megatram.Megatram.service.NotificationService;
 
 import com.Megatram.Megatram.Dto.NotificationDto;
 import com.Megatram.Megatram.Entity.Notification;
@@ -14,10 +15,12 @@ import java.util.stream.Collectors;
 public class NotificationController {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
 
     @Autowired
-    public NotificationController(NotificationRepository notificationRepository) {
+    public NotificationController(NotificationRepository notificationRepository,NotificationService notificationService) {
         this.notificationRepository = notificationRepository;
+        this.notificationService = notificationService;
     }
 
     // Récupérer toutes les notifications d’un user
@@ -42,4 +45,12 @@ public class NotificationController {
         dto.setLu(entity.isLu());
         return dto;
     }
+
+
+    @PutMapping("/{id}/lu")
+public NotificationDto marquerCommeLu(@PathVariable Long id) {
+    Notification updated = notificationService.marquerCommeLu(id);
+    return toDto(updated);
+}
+
 }

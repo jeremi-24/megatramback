@@ -108,4 +108,13 @@ public class NotificationService {
         System.out.println("Notification envoyée à user " + userId + " : " + payload);
     }
     
+
+
+    public Notification marquerCommeLu(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification non trouvée"));
+        notification.setLu(true);
+        return notificationRepository.save(notification);
+    }
+    
 }
