@@ -45,7 +45,7 @@ public class VenteController {
 
     @Operation(summary = "Récupérer toutes les ventes enregistrées")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DG', 'CONTROLEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SECRETARIAT', 'BOUTIQUIER','CONTROLEUR')")
     public ResponseEntity<List<VenteResponseDTO>> getAllVentes() {
         return ResponseEntity.ok(venteService.getAllVentes());
     }
