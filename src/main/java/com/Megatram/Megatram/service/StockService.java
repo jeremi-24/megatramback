@@ -50,10 +50,7 @@ public class StockService {
     
 
     public Stock addStock(Produit produit, LieuStock lieuStock, int quantiteTotaleAjoutee) {
-        if (produit.getQteParCarton() <= 0) {
-            throw new IllegalArgumentException("La quantité par carton pour le produit " + produit.getNom() + " doit être supérieure à 0.");
-        }
-
+        // Récupère ou crée le stock existant
         Stock stock = findStockByProduitAndLieuStock(produit, lieuStock)
                 .orElseGet(() -> {
                     Stock newStock = new Stock();
@@ -63,36 +60,66 @@ public class StockService {
                     newStock.setQteUnitesRestantes(0);
                     return newStock;
                 });
-
-        int ancienneQuantiteTotale = (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
-        int nouvelleQuantiteTotale = ancienneQuantiteTotale + quantiteTotaleAjoutee;
-
-        stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
-        stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
-
-        verifierEtNotifierProduit(produit, 10); // Appel de la méthode pour vérifier et notifier
+    
+        int ancienneQuantiteTotale;
+        int nouvelleQuantiteTotale;
+    
+        if (produit.getQteParCarton() > 0) {
+            // Produit en cartons
+            ancienneQuantiteTotale = (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
+            nouvelleQuantiteTotale = ancienneQuantiteTotale + quantiteTotaleAjoutee;
+    
+            stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
+            stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
+        } else {
+            // Produit non conditionné en cartons
+            ancienneQuantiteTotale = stock.getQteUnitesRestantes(); // ignore les cartons
+            nouvelleQuantiteTotale = ancienneQuantiteTotale + quantiteTotaleAjoutee;
+    
+            stock.setQteCartons(0);
+            stock.setQteUnitesRestantes(nouvelleQuantiteTotale);
+        }
+    
+        verifierEtNotifierProduit(produit, 10);
         return stockRepository.save(stock);
     }
+    
 
     public Stock removeStock(Produit produit, LieuStock lieuStock, int quantiteTotaleRetiree) {
-        if (produit.getQteParCarton() <= 0) {
-            throw new IllegalArgumentException("La quantité par carton pour le produit " + produit.getNom() + " doit être supérieure à 0.");
-        }
-
+        // Récupère le stock ou lance une exception s'il n'existe pas
         Stock stock = findStockByProduitAndLieuStock(produit, lieuStock)
                 .orElseThrow(() -> new RuntimeException("Stock non trouvé pour le produit : " + produit.getNom() + " dans le lieu : " + lieuStock.getNom()));
-
-        int ancienneQuantiteTotale = (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
-
-        if (ancienneQuantiteTotale < quantiteTotaleRetiree) {
-            throw new RuntimeException("Quantité insuffisante en stock pour le produit : " + produit.getNom());
+    
+        int ancienneQuantiteTotale;
+        int nouvelleQuantiteTotale;
+    
+        // Gère le cas des produits conditionnés en cartons
+        if (produit.getQteParCarton() > 0) {
+            ancienneQuantiteTotale = (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
+    
+            if (ancienneQuantiteTotale < quantiteTotaleRetiree) {
+                throw new RuntimeException("Quantité insuffisante en stock pour le produit : " + produit.getNom());
+            }
+    
+            nouvelleQuantiteTotale = ancienneQuantiteTotale - quantiteTotaleRetiree;
+            stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
+            stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
+        } 
+        // Gère le cas des produits non conditionnés en cartons (vendus à l'unité)
+        else {
+            ancienneQuantiteTotale = stock.getQteUnitesRestantes(); // Seules les unités comptent
+    
+            if (ancienneQuantiteTotale < quantiteTotaleRetiree) {
+                throw new RuntimeException("Quantité insuffisante en stock pour le produit : " + produit.getNom());
+            }
+    
+            nouvelleQuantiteTotale = ancienneQuantiteTotale - quantiteTotaleRetiree;
+            stock.setQteCartons(0); // S'assurer que les cartons restent à 0
+            stock.setQteUnitesRestantes(nouvelleQuantiteTotale);
         }
-
-        int nouvelleQuantiteTotale = ancienneQuantiteTotale - quantiteTotaleRetiree;
-        stock.setQteCartons(nouvelleQuantiteTotale / produit.getQteParCarton());
-        stock.setQteUnitesRestantes(nouvelleQuantiteTotale % produit.getQteParCarton());
        
-        verifierEtNotifierProduit(produit, 10); // Appel de la méthode pour vérifier et notifier
+        // Appel de la méthode pour vérifier et notifier
+        verifierEtNotifierProduit(produit, 10);
         return stockRepository.save(stock);
     }
 

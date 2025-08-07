@@ -10,6 +10,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize; // Importer PreAuthorize
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import java.util.List;
 
 @RestController
@@ -47,4 +56,31 @@ public class InventaireController {
 
     // Si une méthode de suppression pour les inventaires existe ou est ajoutée,
     // elle devrait également avoir une annotation @PreAuthorize('INVENTAIRE_MANAGE') ou similaire.
+
+    // NOUVEL ENDPOINT POUR LE TÉLÉCHARGEMENT
+    @Operation(summary = "Exporte un inventaire en fichier Excel")
+    @GetMapping("/{id}/export")
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')")
+    public ResponseEntity<Resource> exportInventaire(@PathVariable Long id) {
+        try {
+            ByteArrayInputStream in = inventaireService.exportInventaireToExcel(id);
+            
+            String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+            String filename = "inventaire_" + id + "_" + timestamp + ".xlsx";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=" + filename);
+
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(new InputStreamResource(in));
+
+        } catch (IOException e) {
+            // Gérer l'exception de manière appropriée
+            // Par exemple, renvoyer une réponse d'erreur
+            return ResponseEntity.status(500).build();
+        }
+    }
 }

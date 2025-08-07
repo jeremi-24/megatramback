@@ -12,6 +12,8 @@ import com.Megatram.Megatram.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +35,8 @@ public class InventaireService {
     private StockService stockService;
     @Autowired
     private StockRepository stockRepository;
+    @Autowired
+    private ExcelExportService excelExportService;
 
     @Transactional
     public InventaireResponseDto enregistrerInventaire(InventaireRequestDto request) {
@@ -118,5 +122,11 @@ public class InventaireService {
                                                 .collect(Collectors.toList());
         response.setLignes(ligneDtos); // Utiliser le setter
         return response;
+    }
+
+    // NOUVELLE MÉTHODE POUR L'EXPORT
+    public ByteArrayInputStream exportInventaireToExcel(Long inventaireId) throws IOException {
+        InventaireResponseDto inventaireDto = getInventaireById(inventaireId);
+        return excelExportService.generateInventaireExcel(inventaireDto);
     }
 }

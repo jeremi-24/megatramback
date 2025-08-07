@@ -74,7 +74,7 @@ public class LigneResponseDto {
                  this.ecartCartons = this.ecartTotalUnites / produit.getQteParCarton();
                  this.ecartUnites = this.ecartTotalUnites % produit.getQteParCarton();
             } else {
-                 this.ecartCartons = null;
+                 this.ecartCartons = 0;
                  this.ecartUnites = null;
             }
 
@@ -84,7 +84,7 @@ public class LigneResponseDto {
             this.qteAvantScanUnitesRestantes = this.qteAvantScanTotaleUnites;
             this.qteScanneCartons = 0;
             this.qteScanneUnitesRestantes = this.qteScanneTotaleUnites;
-             this.ecartCartons = null;
+             this.ecartCartons = 0;
              this.ecartUnites = this.ecartTotalUnites;
         }
     }
