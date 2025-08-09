@@ -203,4 +203,18 @@ public class ProduitController {
         }
         return ResponseEntity.ok(produitAdminDtos);
     }
+
+    @Operation(summary = "Recherche un produit par sa référence")
+    @GetMapping("/ref/{reference}")
+    @PreAuthorize("hasAuthority('PRODUIT_READ') or hasAnyRole('ADMIN')")
+    public ResponseEntity<?> getProduitByRef(@PathVariable("reference") String ref) {
+        try {
+            Produit produit = produitService.getProduitEntityByRef(ref);
+            ProduitAdminDto produitAdminDto = new ProduitAdminDto(produit);
+            produitAdminDto.setQuantiteTotaleGlobale(stockService.getQuantiteTotaleGlobaleByProduit(produit.getId()));
+            return ResponseEntity.ok(produitAdminDto);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }

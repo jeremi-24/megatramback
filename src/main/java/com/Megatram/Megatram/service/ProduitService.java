@@ -13,6 +13,8 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import jakarta.persistence.EntityNotFoundException; // Assurez-vous d'utiliser le bon import
+
 import com.itextpdf.text.log.LoggerFactory;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.poi.ss.usermodel.*;
@@ -48,6 +50,12 @@ public class ProduitService {
         this.produitRepos = produitRepos;
         this.categorieRep = categorieRepository;
         this.lieuStockRepository = lieuStockRepository;
+    }
+
+
+    public Produit getProduitEntityByRef(String ref) {
+        return produitRepos.findByRef(ref)
+                .orElseThrow(() -> new EntityNotFoundException("Aucun produit trouvé avec la référence : " + ref));
     }
 
     /**

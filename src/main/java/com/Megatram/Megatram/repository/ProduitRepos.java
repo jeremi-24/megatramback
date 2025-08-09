@@ -22,6 +22,7 @@ public interface ProduitRepos extends JpaRepository<Produit, Long> {
     List<Produit> findByNom(String nom);
 
     boolean existsByLieuStockId(Long id);
+    Optional<Produit> findByRef(String ref);
 
     // CORRECTION : La condition "OR CAST(p.qte AS string) = :searchTerm" a été supprimée
     @Query("SELECT p FROM Produit p LEFT JOIN p.categorie c LEFT JOIN p.lieuStock l " +

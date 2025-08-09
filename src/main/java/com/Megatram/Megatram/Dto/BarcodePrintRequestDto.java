@@ -1,28 +1,33 @@
 package com.Megatram.Megatram.Dto;
 
-
 public class BarcodePrintRequestDto {
 
-    private String produitNom;
+    // AJOUTÉ : L'identifiant unique du produit. C'est la clé de la solution.
+    private Long produitId;
+
+    // CONSERVÉ : La quantité d'étiquettes à imprimer.
     private int quantite;
+
+    // SUPPRIMÉ : Le nom du produit, qui causait le problème car il n'est pas unique.
+    // private String produitNom;
 
     // Constructeurs
     public BarcodePrintRequestDto() {}
 
-    public BarcodePrintRequestDto(String produitNom, int quantite, int parPage) {
-        this.produitNom = produitNom;
+    // Constructeur mis à jour pour utiliser produitId
+    public BarcodePrintRequestDto(Long produitId, int quantite) {
+        this.produitId = produitId;
         this.quantite = quantite;
     }
 
-    // Getters et Setters
+    // Getters et Setters mis à jour
 
-
-    public String getProduitNom() {
-        return produitNom;
+    public Long getProduitId() {
+        return produitId;
     }
 
-    public void setProduitNom(String produitNom) {
-        this.produitNom = produitNom;
+    public void setProduitId(Long produitId) {
+        this.produitId = produitId;
     }
 
     public int getQuantite() {
@@ -32,6 +37,4 @@ public class BarcodePrintRequestDto {
     public void setQuantite(int quantite) {
         this.quantite = quantite;
     }
-
-
 }
