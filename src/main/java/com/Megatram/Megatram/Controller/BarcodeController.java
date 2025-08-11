@@ -121,7 +121,7 @@ public class BarcodeController {
 
         Path pdfPath = dossierBarcodes.resolve("print_direct_" + produit.getId() + "_" + System.currentTimeMillis() + ".pdf");
 
-        Document document = new Document(PageSize.A4, 36, 35, 15, 5);
+        Document document = new Document(PageSize.A4, 4, 4, 4, 4);
         PdfWriter writer = PdfWriter.getInstance(document, Files.newOutputStream(pdfPath));
         document.open();
 
@@ -137,7 +137,7 @@ public class BarcodeController {
             Barcode128 barcode = new Barcode128();
             barcode.setCode(codeBarre);
             barcode.setSize(12f); // Augmenté pour plus de visibilité
-            barcode.setBaseline(15f); // Augmenté pour plus de hauteur
+            barcode.setBaseline(0f); // Augmenté pour plus de hauteur
             barcode.setBarHeight(25f); // Hauteur explicite des barres
             
             Image barcodeImage = barcode.createImageWithBarcode(writer.getDirectContent(), BaseColor.BLACK, BaseColor.WHITE);
@@ -149,7 +149,7 @@ public class BarcodeController {
             PdfPCell imageCell = new PdfPCell(barcodeImage, true);
             imageCell.setBorder(Rectangle.NO_BORDER);
             imageCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            imageCell.setPaddingBottom(4f);
+            imageCell.setPaddingBottom(0f); // RÉDUIT de 4f à 1f
 
             String textContent = produit.getNom();
             if (produit.getRef() != null && !produit.getRef().isBlank()) {
@@ -159,10 +159,14 @@ public class BarcodeController {
             Phrase phraseNom = new Phrase(textContent, petitePolice);
             Paragraph paraNom = new Paragraph(phraseNom);
             paraNom.setAlignment(Element.ALIGN_CENTER);
+            paraNom.setSpacingBefore(0f); // AJOUTÉ: supprime l'espace avant
+            paraNom.setSpacingAfter(0f);  // AJOUTÉ: supprime l'espace après
             
             PdfPCell nameCell = new PdfPCell();
             nameCell.setBorder(Rectangle.NO_BORDER);
             nameCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            nameCell.setPaddingTop(0f);    // AJOUTÉ: supprime le padding du haut
+            nameCell.setPaddingBottom(2f); // RÉDUIT: padding du bas minimal
             nameCell.addElement(paraNom);
 
             innerTable.addCell(imageCell);
@@ -242,7 +246,7 @@ public class BarcodeController {
         String uniquePdfName = "print_multiple_direct_" + UUID.randomUUID().toString() + ".pdf";
         Path pdfPath = dossierBarcodes.resolve(uniquePdfName);
     
-        Document document = new Document(PageSize.A4, 36, 35, 15, 5);
+        Document document = new Document(PageSize.A4, 4, 4, 4, 4);
         PdfWriter writer = PdfWriter.getInstance(document, Files.newOutputStream(pdfPath));
         document.open();
     
@@ -277,7 +281,7 @@ public class BarcodeController {
                 Barcode128 barcode = new Barcode128();
                 barcode.setCode(codeBarre);
                 barcode.setSize(12f);
-                barcode.setBaseline(15f);
+                barcode.setBaseline(0f);
                 barcode.setBarHeight(25f);
     
                 // Remplir les cellules pour ce produit
@@ -339,7 +343,7 @@ public class BarcodeController {
             String uniquePdfName = "test_simple_" + System.currentTimeMillis() + ".pdf";
             Path pdfPath = dossierBarcodes.resolve(uniquePdfName);
 
-            Document document = new Document(PageSize.A4, 36, 35, 15, 5);
+            Document document = new Document(PageSize.A4, 4, 4, 4, 4);
             PdfWriter writer = PdfWriter.getInstance(document, Files.newOutputStream(pdfPath));
             document.open();
 
@@ -364,8 +368,15 @@ public class BarcodeController {
             
             document.add(barcodeImage);
             
-            document.add(new Paragraph(" ")); // Ligne vide
-            document.add(new Paragraph("Code-barres: TEST123456", new Font(Font.FontFamily.HELVETICA, 12)));
+            // MODIFICATION: Réduction de l'espace entre l'image et le texte
+            Paragraph spacer = new Paragraph(" ");
+            spacer.setSpacingBefore(2f); // RÉDUIT: espace minimal
+            spacer.setSpacingAfter(0f);
+            document.add(spacer);
+            
+            Paragraph codeText = new Paragraph("Code-barres: TEST123456", new Font(Font.FontFamily.HELVETICA, 12));
+            codeText.setSpacingBefore(0f); // AJOUTÉ: pas d'espace avant
+            document.add(codeText);
             
             document.close();
             
@@ -380,15 +391,19 @@ public class BarcodeController {
             throw new RuntimeException("Erreur lors de la génération du PDF test", e);
         }
     }
+
     private PdfPCell createBarcodeCell_Nouvelle(Produit produit, Image barcodeImage, Font font) {
         PdfPTable innerTable = new PdfPTable(1);
         innerTable.setWidthPercentage(100);
+        innerTable.setSpacingBefore(0f); // AJOUTÉ: supprime l'espace avant le tableau
+        innerTable.setSpacingAfter(0f);  // AJOUTÉ: supprime l'espace après le tableau
 
         // Cellule pour l'image du code-barres
         PdfPCell imageCell = new PdfPCell(barcodeImage, true);
         imageCell.setBorder(Rectangle.NO_BORDER);
         imageCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        imageCell.setPaddingBottom(1f);
+        imageCell.setPaddingBottom(1f); // RÉDUIT de 4f à 1f
+        imageCell.setPaddingTop(0f);    // AJOUTÉ: supprime le padding du haut
 
         // Cellule pour le texte
         String textContent = produit.getNom();
@@ -399,11 +414,15 @@ public class BarcodeController {
         Phrase phraseNom = new Phrase(textContent, font);
         Paragraph paraNom = new Paragraph(phraseNom);
         paraNom.setAlignment(Element.ALIGN_CENTER);
+        paraNom.setSpacingBefore(0f); // AJOUTÉ: supprime l'espace avant
+        paraNom.setSpacingAfter(0f);  // AJOUTÉ: supprime l'espace après
         
         PdfPCell nameCell = new PdfPCell();
         nameCell.addElement(paraNom);
         nameCell.setBorder(Rectangle.NO_BORDER);
         nameCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        nameCell.setPaddingTop(0f);    // AJOUTÉ: supprime le padding du haut
+        nameCell.setPaddingBottom(2f); // RÉDUIT: padding minimal
 
         innerTable.addCell(imageCell);
         innerTable.addCell(nameCell);
@@ -414,7 +433,7 @@ public class BarcodeController {
         outerCell.setMinimumHeight(100f); // au lieu de FixedHeight
         outerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
         outerCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        outerCell.setPadding(8f); // Plus de padding
+        outerCell.setPadding(5f); // RÉDUIT de 8f à 5f
 
         return outerCell;
     }

@@ -9,6 +9,8 @@ public class LigneInventaireDto {
     // Nouveau champ pour spécifier le type de quantité scannée ("CARTON" ou "UNITE")
     public String typeQuantiteScanne;
 
+    public String ref;
+
 
     public Long getProduitId() {
         return produitId;
@@ -41,5 +43,12 @@ public class LigneInventaireDto {
 
     public void setTypeQuantiteScanne(String typeQuantiteScanne) {
         this.typeQuantiteScanne = typeQuantiteScanne;
+    }
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 }

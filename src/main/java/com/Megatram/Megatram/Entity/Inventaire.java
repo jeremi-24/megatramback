@@ -12,6 +12,7 @@ public class Inventaire {
 
     private LocalDateTime date = LocalDateTime.now();
     private String charge;
+    private String status = "EN_ATTENTE_CONFIRMATION";
 
     // AJOUTÉ : La relation OneToMany vers les lignes d'inventaire
     @OneToMany(mappedBy = "inventaire", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -36,6 +37,13 @@ public class Inventaire {
     }
     public void setCharge(String charge) {
         this.charge = charge;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     // AJOUTÉ : Les getters et setters pour la liste de lignes

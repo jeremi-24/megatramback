@@ -18,6 +18,7 @@ public class LigneInventaire {
     private int qteScanne;
     private int qteAvantScan;
     private Integer ecart;
+    private String ref;
 
     // Nouveau champ pour stocker le type de quantité scannée ("CARTON" ou "UNITE")
     private String typeQuantiteScanne;
@@ -88,5 +89,13 @@ public class LigneInventaire {
 
     public void setTypeQuantiteScanne(String typeQuantiteScanne) {
         this.typeQuantiteScanne = typeQuantiteScanne;
+    }
+
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 }

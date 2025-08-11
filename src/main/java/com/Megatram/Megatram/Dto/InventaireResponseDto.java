@@ -12,8 +12,8 @@ public class InventaireResponseDto {
     public Long inventaireId;
     public String charge;
     public LocalDateTime date; // Utiliser LocalDateTime si c'est le type dans l'entité
+    public String status; // Nouveau champ pour le statut
     public List<LigneResponseDto> lignes;
-
 
     public InventaireResponseDto() {
     }
@@ -23,6 +23,7 @@ public class InventaireResponseDto {
         this.inventaireId = inventaire.getId();
         this.charge = inventaire.getCharge();
         this.date = inventaire.getDate(); // Lire la date de l'entité
+        // Le status sera défini dans le service
 
         // Mapper les lignes en utilisant le constructeur mis à jour de LigneResponseDto
         if (inventaire.getLignes() != null) { // Assurez-vous que l'entité Inventaire a une liste de LigneInventaire et une méthode getLignes
@@ -34,7 +35,6 @@ public class InventaireResponseDto {
             this.lignes = null;
         }
     }
-
 
     // Getters and Setters
 
@@ -60,6 +60,14 @@ public class InventaireResponseDto {
 
     public void setDate(LocalDateTime date) {
         this.date = date;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public List<LigneResponseDto> getLignes() {

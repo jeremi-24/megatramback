@@ -7,6 +7,7 @@ import com.Megatram.Megatram.Entity.LieuStock; // Maintenir si nécessaire
 public class LigneResponseDto {
 
     private Long produitId;
+    private String ref;
     private String nomProduit;
     private String lieuStockNom;
 
@@ -40,6 +41,7 @@ public class LigneResponseDto {
         Produit produit = ligneInventaire.getProduit();
         if (produit != null) {
              this.produitId = produit.getId();
+             this.ref = produit.getRef();
              this.nomProduit = produit.getNom();
         } else {
             this.produitId = null;
@@ -91,6 +93,14 @@ public class LigneResponseDto {
 
 
     // Getters and Setters
+
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
+    }
 
     public Long getProduitId() {
         return produitId;
