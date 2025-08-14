@@ -17,4 +17,10 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     // Nouvelle méthode pour trouver tous les stocks par produit
     List<Stock> findByProduit(Produit produit);
+
+    // Nouvelle méthode pour trouver tous les stocks par lieu
+    List<Stock> findByLieuStock(LieuStock lieuStock);
+
+    @Query("SELECT s FROM Stock s WHERE s.lieuStock.nom = :lieuStockNom")
+    List<Stock> findByLieuStockNom(@Param("lieuStockNom") String lieuStockNom);
 }

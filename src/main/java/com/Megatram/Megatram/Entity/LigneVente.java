@@ -27,6 +27,10 @@ public class LigneVente {
     @JoinColumn(name = "vente_id")
     private Vente vente;
 
+ @ManyToOne
+ @JoinColumn(name = "lieu_stock_id")
+ private LieuStock lieuStock;
+
     @PrePersist
     @PreUpdate
     public void calculerTotal() {
@@ -117,5 +121,13 @@ public class LigneVente {
 
     public void setVente(Vente vente) {
         this.vente = vente;
+    }
+
+    public LieuStock getLieuStock() {
+        return lieuStock;
+    }
+
+    public void setLieuStock(LieuStock lieuStock) {
+        this.lieuStock = lieuStock;
     }
 }

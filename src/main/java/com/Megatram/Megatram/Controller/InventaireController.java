@@ -38,7 +38,9 @@ public class InventaireController {
     @PostMapping("/calculer")
     @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')")
     public ResponseEntity<InventaireResponseDto> calculerInventaire(@RequestBody InventaireRequestDto request) {
+ request.setLieuStockId(request.getLieuStockId()); // Ensure lieuStockId is in the request body
         InventaireResponseDto response = inventaireService.creerInventaireSansApplique(request);
+
         return ResponseEntity.ok(response);
     }
 
@@ -51,6 +53,7 @@ public class InventaireController {
     public ResponseEntity<InventaireResponseDto> recalculerInventaire(
             @PathVariable Long id, 
             @RequestBody InventaireRequestDto request) {
+ request.setLieuStockId(request.getLieuStockId()); // Ensure lieuStockId is in the request body
         InventaireResponseDto response = inventaireService.modifierInventaireSansApplique(id, request);
         return ResponseEntity.ok(response);
     }
@@ -89,7 +92,8 @@ public class InventaireController {
     @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')")
     public ResponseEntity<InventaireResponseDto> creerInventaire(
             @RequestBody InventaireRequestDto request,
-            @RequestParam(defaultValue = "false") boolean premier) {
+ @RequestParam(defaultValue = "false") boolean premier) {
+ request.setLieuStockId(request.getLieuStockId()); // Ensure lieuStockId is in the request body
         InventaireResponseDto response = inventaireService.enregistrerInventaire(request, premier);
         return ResponseEntity.ok(response);
     }
@@ -103,6 +107,7 @@ public class InventaireController {
     public ResponseEntity<InventaireResponseDto> modifierInventaire(
             @PathVariable Long id, 
             @RequestBody InventaireRequestDto request,
+
             @RequestParam(defaultValue = "false") boolean premier) {
         InventaireResponseDto response = inventaireService.modifierInventaire(id, request, premier);
         return ResponseEntity.ok(response);
@@ -124,6 +129,14 @@ public class InventaireController {
     public ResponseEntity<InventaireResponseDto> getInventaire(@PathVariable Long id) {
         return ResponseEntity.ok(inventaireService.getInventaireById(id));
     }
+
+    @Operation(summary = "Récupère les inventaires par lieu de stock")
+    @GetMapping("/lieu/{lieuStockId}")
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN') or hasAuthority('INVENTAIRE_VIEW')")
+    public ResponseEntity<List<InventaireResponseDto>> getInventairesByLieu(@PathVariable Long lieuStockId) {
+ List<InventaireResponseDto> inventaires = inventaireService.getInventairesByLieuStock(lieuStockId);
+ return ResponseEntity.ok(inventaires);
+ }
 
     @Operation(summary = "Exporte un inventaire en fichier Excel")
     @GetMapping("/{id}/export")

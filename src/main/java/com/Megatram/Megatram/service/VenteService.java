@@ -92,6 +92,12 @@ public class VenteService {
         long randomNum = ThreadLocalRandom.current().nextLong(1000, 9999);
         vente.setRef("POS-" + timestamp + "-" + randomNum);
         
+        // Récupérer l'utilisateur (caissier) pour obtenir son lieu de stock
+        Utilisateur caissier = utilisateurRepository.findByEmail(agentEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Utilisateur (caissier) non trouvé avec l'email : " + agentEmail));
+
+        LieuStock lieuStockVente = caissier.getLieu();
+
         // Récupération du client à partir de l'ID fourni dans le DTO
         // Utilisation de clientId au lieu de getIdClient()
         if (venteDto.getClientId() != null && venteDto.getClientId() > 0) {
@@ -108,12 +114,7 @@ public class VenteService {
             Produit produit = produitRepos.findByCodeBarre(ligneDto.getCodeProduit())
                     .orElseThrow(() -> new EntityNotFoundException("Produit introuvable: code=" + ligneDto.getCodeProduit()));
 
-            LieuStock lieuStock = produit.getLieuStock();
-            if (lieuStock == null) {
-                 throw new IllegalStateException("Le produit " + produit.getNom() + " n'a pas de lieu de stock attribué.");
-            }
-            
-            // Le nom du champ de quantité est "quantite" dans LigneVenteDto
+ // Le nom du champ de quantité est "quantite" dans LigneVenteDto
             int quantiteVendue = ligneDto.getQteVendueDansLigne();
             Integer qteParCarton = produit.getQteParCarton();
             int quantiteTotaleVendueEnUnites;
@@ -129,9 +130,10 @@ public class VenteService {
                 quantiteTotaleVendueEnUnites = quantiteVendue;
                 prixApplique = produit.getPrix();
             }
+ vente.setLieuStock(lieuStockVente); // Associer la vente au lieu de stock du caissier
 
             // Mise à jour du stock
-            stockService.removeStock(produit, lieuStock, quantiteTotaleVendueEnUnites);
+            stockService.removeStock(produit, lieuStockVente, quantiteTotaleVendueEnUnites);
 
             LigneVente ligne = new LigneVente();
             ligne.setProduit(produit);
@@ -183,12 +185,9 @@ public void annulerVente(Long venteId) {
             quantiteEnUnite = quantiteVendue;
         }
 
-        LieuStock lieuStock = produit.getLieuStock();
-        if (lieuStock == null) {
-            throw new IllegalStateException("Lieu de stock manquant pour le produit : " + produit.getNom());
-        }
-
-        stockService.addStock(produit, lieuStock, quantiteEnUnite);
+ // Obtenir le lieu de stock de la vente elle-même
+        LieuStock lieuStockAnnulation = vente.getLieuStock(); 
+        stockService.addStock(produit, lieuStockAnnulation, quantiteEnUnite);
     }
 
     LigneVenteRepo.deleteAll(vente.getLignes());

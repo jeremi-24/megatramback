@@ -12,6 +12,7 @@ public class UtilisateurResponseDTO {
     private String clientNom;
     private String clientTel;
     private List<PermissionResponseDTO> permissions; // <-- CHAMP À AJOUTER
+    private Long lieuStockId;
 
     // Getters et Setters...
 
@@ -83,6 +84,14 @@ public class UtilisateurResponseDTO {
 
     public void setPermissions(List<PermissionResponseDTO> permissions) {
         this.permissions = permissions;
+    }
+
+    public Long getLieuStockId() {
+        return lieuStockId;
+    }
+
+    public void setLieuStockId(Long lieuStockId) {
+        this.lieuStockId = lieuStockId;
     }
 
 

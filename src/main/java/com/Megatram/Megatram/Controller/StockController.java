@@ -1,4 +1,5 @@
 package com.Megatram.Megatram.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import com.Megatram.Megatram.Dto.StockDto;
 import com.Megatram.Megatram.service.StockService;
@@ -28,6 +29,25 @@ public class StockController {
     @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN','BOUTIQUIER')") // Utilisation de la permission existante pour la gestion des stocks
     public ResponseEntity<List<StockDto>> getAllStocks() {
         List<StockDto> stocks = stockService.getAllStocks();
+        return ResponseEntity.ok(stocks);
+    }
+
+    @Operation(summary = "Récupère tous les stocks pour un lieu spécifique")
+@GetMapping("/lieu/{lieuStockId}")
+@PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN','BOUTIQUIER')")
+public ResponseEntity<List<StockDto>> getStocksByLieuStockId(@PathVariable Long lieuStockId) {
+    List<StockDto> stocks = stockService.getStocksByLieuStockId(lieuStockId);
+    return ResponseEntity.ok(stocks);
+}
+
+ @Operation(summary = "Récupère tous les stocks pour un lieu spécifique par nom")
+    @GetMapping("/lieuStock/{nom}")
+    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN','BOUTIQUIER')")
+    public ResponseEntity<List<StockDto>> getStocksByLieuStockNom(@PathVariable String nom) {
+        List<StockDto> stocks = stockService.getStocksByLieuStockNom(nom);
+        if (stocks.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(stocks);
     }
 }

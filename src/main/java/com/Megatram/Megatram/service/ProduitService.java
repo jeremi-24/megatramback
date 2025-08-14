@@ -7,11 +7,11 @@ import com.Megatram.Megatram.Entity.Categorie;
 import com.Megatram.Megatram.Entity.LieuStock;
 import com.Megatram.Megatram.Entity.Produit;
 import com.Megatram.Megatram.repository.CategorieRep;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.Megatram.Megatram.repository.LieuStockRepository;
 import com.Megatram.Megatram.repository.ProduitRepos;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import jakarta.persistence.EntityNotFoundException; // Assurez-vous d'utiliser le bon import
 
@@ -36,20 +36,26 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
+
 @Transactional
 public class ProduitService {
 
+    @Autowired
+ private StockService stockService;
     private final ProduitRepos produitRepos;
+
     private final CategorieRep categorieRep;
-    private final LieuStockRepository lieuStockRepository;
 
     private final Path barcodeStoragePath = Paths.get("barcodes");
+    private final LieuStockRepository lieuStockRepository; // Inject LieuStockRepository
+
 
     @Autowired
-    public ProduitService(ProduitRepos produitRepos, CategorieRep categorieRepository, LieuStockRepository lieuStockRepository) {
+    public ProduitService(ProduitRepos produitRepos, CategorieRep categorieRepository, StockService stockService, LieuStockRepository lieuStockRepository) {
         this.produitRepos = produitRepos;
         this.categorieRep = categorieRepository;
-        this.lieuStockRepository = lieuStockRepository;
+        this.lieuStockRepository = lieuStockRepository; // Initialize LieuStockRepository
+ this.stockService = stockService;
     }
 
 
@@ -67,17 +73,10 @@ public class ProduitService {
         Categorie categorie = categorieRep.findById(dto.getCategorieId())
                 .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
 
-        LieuStock lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
-                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
-
         Produit produit = new Produit();
-        produit.setNom(dto.getNom());
-        produit.setRef(dto.getRef());
-        produit.setPrix(dto.getPrix()); // Prix unitaire
         produit.setQteMin(dto.getQteMin());
         // produit.setQte(0); // Ancienne gestion de quantité, remplacée par le système de stock
         produit.setCategorie(categorie);
-        produit.setLieuStock(lieuStock);
         produit.setQteParCarton(dto.getQteParCarton()); // Définir la quantité par carton
         produit.setPrixCarton(dto.getPrixCarton()); // Définir le prix par carton
 
@@ -97,18 +96,9 @@ public class ProduitService {
         Produit produitToUpdate = produitRepos.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé pour la mise à jour : " + id));
 
-        Categorie categorie = categorieRep.findById(dto.getCategorieId())
-                .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
-
-        LieuStock lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
-                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
-
-        produitToUpdate.setNom(dto.getNom());
         produitToUpdate.setRef(dto.getRef());
         produitToUpdate.setPrix(dto.getPrix()); // Prix unitaire
         produitToUpdate.setQteMin(dto.getQteMin());
-        produitToUpdate.setCategorie(categorie);
-        produitToUpdate.setLieuStock(lieuStock);
         produitToUpdate.setQteParCarton(dto.getQteParCarton()); // Mettre à jour la quantité par carton
         produitToUpdate.setPrixCarton(dto.getPrixCarton()); // Mettre à jour le prix par carton
 
@@ -259,20 +249,6 @@ public class ProduitService {
                     }
                 }
 
-                // Lieu de stock (optionnel)
-                if (colIndexMap.containsKey("lieu") || colIndexMap.containsKey("lieu_stock")) {
-                    String lieuStockNom = colIndexMap.containsKey("lieu") ? formatter.formatCellValue(row.getCell(colIndexMap.get("lieu"))).trim() : formatter.formatCellValue(row.getCell(colIndexMap.get("lieu_stock"))).trim();
-                    if (!lieuStockNom.isEmpty()) {
-                        LieuStock lieu = lieuStockRepository.findByNomIgnoreCase(lieuStockNom)
-                                .orElseGet(() -> {
-                                    LieuStock nouveauLieu = new LieuStock();
-                                    nouveauLieu.setNom(lieuStockNom);
-                                    return lieuStockRepository.save(nouveauLieu);
-                                });
-                        p.setLieuStock(lieu);
-                    }
-                }
-
 
                 produits.add(p);
             }
@@ -358,7 +334,7 @@ public class ProduitService {
         }
 
         Categorie categorie = null;
-        LieuStock lieuStock = null;
+        LieuStock lieuStock = null; // Initialize lieuStock
 
         if (dto.getCategorieId() != null) {
             categorie = categorieRep.findById(dto.getCategorieId())
@@ -366,8 +342,7 @@ public class ProduitService {
         }
 
         if (dto.getLieuStockId() != null) {
-            lieuStock = lieuStockRepository.findById(dto.getLieuStockId())
-                    .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
+            lieuStock = lieuStockRepository.findById(dto.getLieuStockId()).orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + dto.getLieuStockId()));
         }
 
         for (Produit produit : produits) {
@@ -375,7 +350,7 @@ public class ProduitService {
                 produit.setCategorie(categorie);
             }
             if (lieuStock != null) {
-                produit.setLieuStock(lieuStock);
+                stockService.createOrUpdateStockEntry(produit, lieuStock, 0); // Use StockService
             }
         }
 

@@ -30,6 +30,10 @@ public class Vente {
 
     private LocalDateTime date;
 
+ @ManyToOne
+ @JoinColumn(name = "lieu_stock_id")
+ private LieuStock lieuStock;
+
     @PrePersist
     @PreUpdate
     public void prePersistAndUpdate() {
@@ -66,5 +70,14 @@ public class Vente {
     }
     public void setTotal(double total) {
         this.total = total;
+    }
+
+    // Getter et Setter pour lieuStock
+    public LieuStock getLieuStock() {
+ return lieuStock;
+    }
+
+    public void setLieuStock(LieuStock lieuStock) {
+ this.lieuStock = lieuStock;
     }
 }

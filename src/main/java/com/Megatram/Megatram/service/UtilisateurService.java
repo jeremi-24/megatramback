@@ -57,7 +57,7 @@ public class UtilisateurService {
     }
     
 
-    public Utilisateur saveUtilisateur(Utilisateur utilisateur) {
+    public Utilisateur saveUtilisateur(Utilisateur utilisateur) { // This method is not used but kept for potential future use
         String rawPassword = utilisateur.getPassword();
         String encodedPassword = passwordEncoder.encode(rawPassword);
         utilisateur.setPassword(encodedPassword);
@@ -73,7 +73,7 @@ public class UtilisateurService {
         }
 
         String email = authentication.getName();
-        return utilisateurRepository.findByEmail(email).orElse(null);
+ return utilisateurRepository.findByEmailWithPermissions(email).orElse(null);
     }
 
     public String getRoleByEmail(String email) {
@@ -221,6 +221,7 @@ public class UtilisateurService {
 
         if (utilisateur.getLieu() != null) {
             dto.setLieuNom(utilisateur.getLieu().getNom());
+            dto.setLieuStockId(utilisateur.getLieu().getId());
         }
 
         if (utilisateur.getRole() != null) {

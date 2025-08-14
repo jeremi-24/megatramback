@@ -2,7 +2,6 @@ package com.Megatram.Megatram.Entity;
 
 import jakarta.persistence.*;
 import com.Megatram.Megatram.Entity.Categorie;
-import com.Megatram.Megatram.Entity.LieuStock;
 
 import java.util.UUID;
 
@@ -27,10 +26,6 @@ public class Produit {
     @ManyToOne
     @JoinColumn(name = "categorie_id")
     private Categorie categorie;
-
-    @ManyToOne
-    @JoinColumn(name = "lieu_stock_id")
-    private LieuStock lieuStock;
 
     private String barcodeImagePath; // Champ pour stocker le chemin de l'image du code-barres
 
@@ -118,14 +113,6 @@ public class Produit {
 
     public void setCategorie(Categorie categorie) {
         this.categorie = categorie;
-    }
-
-    public LieuStock getLieuStock() {
-        return lieuStock;
-    }
-
-    public void setLieuStock(LieuStock lieuStock) {
-        this.lieuStock = lieuStock;
     }
 
     public String getBarcodeImagePath() {

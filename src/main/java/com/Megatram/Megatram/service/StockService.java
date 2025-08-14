@@ -10,6 +10,7 @@ import com.Megatram.Megatram.repository.StockRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,6 +26,9 @@ public class StockService {
 
     @Autowired
     private ProduitRepos produitRepos; // Injecter ProduitRepos
+
+    @Autowired
+ private LieuStockRepository lieuStockRepository;
 
     public Optional<Stock> findStockByProduitAndLieuStock(Produit produit, LieuStock lieuStock) {
         return stockRepository.findByProduitAndLieuStock(produit, lieuStock);
@@ -135,6 +139,54 @@ public class StockService {
         stockRepository.deleteById(id);
     }
 
+    public void createStockEntryForImport(Produit produit, String lieuStockNom) {
+        if (lieuStockNom != null && !lieuStockNom.isEmpty()) {
+            LieuStock lieuStock = lieuStockRepository.findByNomIgnoreCase(lieuStockNom)
+                    .orElseGet(() -> {
+                        LieuStock nouveauLieu = new LieuStock();
+                        nouveauLieu.setNom(lieuStockNom);
+                        return lieuStockRepository.save(nouveauLieu);
+                    });
+
+            Optional<Stock> existingStock = findStockByProduitAndLieuStock(produit, lieuStock);
+
+            if (!existingStock.isPresent()) {
+                Stock newStock = new Stock();
+                newStock.setProduit(produit);
+                newStock.setLieuStock(lieuStock);
+                newStock.setQteCartons(0);
+                newStock.setQteUnitesRestantes(0);
+                stockRepository.save(newStock);
+            }
+        }
+    }
+
+    public void createOrUpdateStockEntry(Produit produit, LieuStock lieuStock, int initialQuantity) {
+        Stock stock = findStockByProduitAndLieuStock(produit, lieuStock)
+                .orElseGet(() -> {
+                    Stock newStock = new Stock();
+                    newStock.setProduit(produit);
+                    newStock.setLieuStock(lieuStock);
+                    return newStock;
+                });
+
+        int currentTotalQuantity = (stock.getQteCartons() * produit.getQteParCarton()) + stock.getQteUnitesRestantes();
+        int newTotalQuantity = currentTotalQuantity + initialQuantity;
+
+        if (produit.getQteParCarton() > 0) {
+            stock.setQteCartons(newTotalQuantity / produit.getQteParCarton());
+            stock.setQteUnitesRestantes(newTotalQuantity % produit.getQteParCarton());
+        } else {
+            stock.setQteCartons(0); // S'assurer que les cartons restent à 0 si non conditionné
+            stock.setQteUnitesRestantes(newTotalQuantity);
+        }
+
+        stockRepository.save(stock);
+
+        // Optionally, you might want to call verifierEtNotifierProduit here as well
+        // verifierEtNotifierProduit(produit, 10);
+    }
+
     // Nouvelle méthode pour calculer la quantité totale globale par produit
     public int getQuantiteTotaleGlobaleByProduit(Long produitId) {
         Optional<Produit> produitOpt = produitRepos.findById(produitId);
@@ -157,5 +209,22 @@ public class StockService {
 
     private StockDto convertToDto(Stock stock) {
         return new StockDto(stock);
+    }
+
+    // Récupérer tous les stocks d'un lieu spécifique
+public List<StockDto> getStocksByLieuStockId(Long lieuStockId) {
+    LieuStock lieuStock = lieuStockRepository.findById(lieuStockId)
+            .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'id : " + lieuStockId));
+    
+    List<Stock> stocks = stockRepository.findByLieuStock(lieuStock);
+    return stocks.stream().map(this::convertToDto).collect(Collectors.toList());
+}
+
+    public List<StockDto> getStocksByLieuStockNom(String lieuStockNom) {
+ LieuStock lieuStock = lieuStockRepository.findByNomIgnoreCase(lieuStockNom)
+ .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec le nom : " + lieuStockNom));
+
+ List<Stock> stocks = stockRepository.findByLieuStock(lieuStock);
+ return stocks.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 }

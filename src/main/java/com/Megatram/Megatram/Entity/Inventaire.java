@@ -18,6 +18,10 @@ public class Inventaire {
     @OneToMany(mappedBy = "inventaire", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LigneInventaire> lignes;
 
+ @ManyToOne
+ @JoinColumn(name = "lieu_stock_id")
+ private LieuStock lieuStock;
+
     // --- Getters et Setters ---
 
     public Long getId() {
@@ -53,4 +57,11 @@ public class Inventaire {
     public void setLignes(List<LigneInventaire> lignes) {
         this.lignes = lignes;
     }
+
+ public LieuStock getLieuStock() {
+ return lieuStock;
+ }
+ public void setLieuStock(LieuStock lieuStock) {
+ this.lieuStock = lieuStock;
+ }
 }

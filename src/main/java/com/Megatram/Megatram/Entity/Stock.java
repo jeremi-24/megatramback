@@ -3,6 +3,9 @@ package com.Megatram.Megatram.Entity;
 import jakarta.persistence.*;
 
 @Entity
+@Table(
+    uniqueConstraints = @UniqueConstraint(columnNames = {"produit_id", "lieu_stock_id"})
+)
 public class Stock {
 
     @Id
@@ -10,7 +13,7 @@ public class Stock {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "produit_id", nullable = false, unique = true) // Assurons l'unicité du stock par produit/lieu
+    @JoinColumn(name = "produit_id", nullable = false) // Assurons l'unicité du stock par produit/lieu
     private Produit produit;
 
     @ManyToOne

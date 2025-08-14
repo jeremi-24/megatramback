@@ -10,6 +10,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.Megatram.Megatram.repository.LieuStockRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ public class CommandeService {
     private BonLivraisonService bonLivraisonService;
     @Autowired
 private NotificationService notificationService;
+    @Autowired
+    private LieuStockRepository lieuStockRepository;
 
 
     @Transactional
@@ -50,25 +53,16 @@ private NotificationService notificationService;
         commande.setDate(LocalDateTime.now());
         commande.setStatut(StatutCommande.EN_ATTENTE);
 
-        LieuStock lieuDeStockDeReference = null;
+        LieuStock lieuDeStockDeReference = lieuStockRepository.findById(requestDTO.getLieuStockId())
+                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + requestDTO.getLieuStockId()));
+
         List<LigneCommande> lignes = new ArrayList<>();
 
         for (LigneCommandeRequestDTO ligneDto : requestDTO.getLignes()) {
             Produit produit = produitRepos.findById(ligneDto.getProduitId())
                     .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec l'ID : " + ligneDto.getProduitId()));
 
-            if (lieuDeStockDeReference == null) {
-                lieuDeStockDeReference = produit.getLieuStock();
-                if (lieuDeStockDeReference == null) {
-                    throw new IllegalStateException("Le produit ID " + produit.getId() + " n'est associé à aucun lieu de stock.");
-                }
-            } else if (!Objects.equals(produit.getLieuStock().getId(), lieuDeStockDeReference.getId())) {
-                throw new IllegalArgumentException("Tous les produits d'une même commande doivent provenir du même lieu de stock.");
-            }
-
-            LigneCommande ligne = new LigneCommande();
-            ligne.setProduitId(produit.getId());
-            ligne.setProduitPrix(produit.getPrix());
+            LigneCommande ligne = new LigneCommande(); ligne.setProduitId(produit.getId()); ligne.setProduitPrix(produit.getPrix());
             ligne.setQteVoulu(ligneDto.getQteVoulu());
             ligne.setCommande(commande);
             lignes.add(ligne);
@@ -181,27 +175,23 @@ private NotificationService notificationService;
         commande.setClient(client);
 
         commande.getLignes().clear();
-        LieuStock lieuDeStockDeReference = null;
+        LieuStock lieuDeStockDeReference = lieuStockRepository.findById(requestDTO.getLieuStockId())
+                .orElseThrow(() -> new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + requestDTO.getLieuStockId()));
+
         for (LigneCommandeRequestDTO ligneDto : requestDTO.getLignes()) {
             Produit produit = produitRepos.findById(ligneDto.getProduitId())
-                    .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec l'ID : " + ligneDto.getProduitId()));
-
-            if (lieuDeStockDeReference == null) {
-                lieuDeStockDeReference = produit.getLieuStock();
-            } else if (!Objects.equals(produit.getLieuStock().getId(), lieuDeStockDeReference.getId())) {
-                throw new IllegalArgumentException("Tous les produits doivent provenir du même lieu de stock.");
-            }
+                    .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé avec l'ID : " + ligneDto.getProduitId())); // Utilisez le bon produitRepos ici
 
             LigneCommande nouvelleLigne = new LigneCommande();
             nouvelleLigne.setProduitId(produit.getId());
             nouvelleLigne.setProduitPrix(produit.getPrix());
             nouvelleLigne.setQteVoulu(ligneDto.getQteVoulu());
             nouvelleLigne.setCommande(commande);
-            commande.getLignes().add(nouvelleLigne);
+            commande.getLignes().add(nouvelleLigne); // This line is inside the loop
         }
         commande.setLieuStock(lieuDeStockDeReference);
 
-        Commande commandeModifiee = commandeRepository.save(commande);
+        Commande commandeModifiee = commandeRepository.save(commande); // This line is outside the loop
         return convertToResponseDTO(commandeModifiee);
     }
 

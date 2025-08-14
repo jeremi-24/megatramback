@@ -16,6 +16,7 @@ public class LigneVenteDto {
     private int qteVendueTotaleUnites;
     private double total;
     private String codeProduit;
+    private Long lieuStockId;
 
     public LigneVenteDto() {
     }
@@ -26,6 +27,10 @@ public class LigneVenteDto {
         this.typeQuantite = ligneVente.getTypeQuantite();
         this.produitPrix = ligneVente.getProduitPrix();
         this.total = ligneVente.getTotal();
+
+        if (ligneVente.getLieuStock() != null) {
+            this.lieuStockId = ligneVente.getLieuStock().getId();
+        }
 
         Produit produit = ligneVente.getProduit();
         if (produit != null) {
@@ -138,5 +143,13 @@ public class LigneVenteDto {
 
     public void setCodeProduit(String codeProduit) {
         this.codeProduit = codeProduit;
+    }
+
+    public Long getLieuStockId() {
+        return lieuStockId;
+    }
+
+    public void setLieuStockId(Long lieuStockId) {
+        this.lieuStockId = lieuStockId;
     }
 }

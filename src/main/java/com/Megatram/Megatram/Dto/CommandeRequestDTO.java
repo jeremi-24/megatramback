@@ -6,6 +6,8 @@ public class CommandeRequestDTO {
 
     private Long clientId;
 
+    private Long lieuStockId;
+
     private List<LigneCommandeRequestDTO> lignes;
 
     public Long getClientId() {
@@ -22,5 +24,13 @@ public class CommandeRequestDTO {
 
     public void setLignes(List<LigneCommandeRequestDTO> lignes) {
         this.lignes = lignes;
+    }
+
+    public Long getLieuStockId() {
+        return lieuStockId;
+    }
+
+    public void setLieuStockId(Long lieuStockId) {
+        this.lieuStockId = lieuStockId;
     }
 }

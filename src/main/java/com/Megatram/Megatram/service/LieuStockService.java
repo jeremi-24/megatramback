@@ -70,9 +70,6 @@ public class LieuStockService {
             if (!lieuStockRepository.existsById(id)) {
                 throw new EntityNotFoundException("Lieu de stock non trouvé avec l'ID : " + id + ". Opération annulée.");
             }
-            if (produitRepos.existsByLieuStockId(id)) {
-                throw new IllegalStateException("Impossible de supprimer le lieu (ID: " + id + ") car des produits y sont encore assignés.");
-            }
             if (utilisateurRepository.existsByLieuId(id)) {
                 throw new IllegalStateException("Impossible de supprimer le lieu (ID: " + id + ") car des utilisateurs y sont encore assignés.");
             }

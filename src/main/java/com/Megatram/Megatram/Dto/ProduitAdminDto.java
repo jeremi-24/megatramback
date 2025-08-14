@@ -50,13 +50,6 @@ public class ProduitAdminDto {
             this.categorieNom = null;
         }
 
-        if (produit.getLieuStock() != null) {
-            this.lieuStockId = produit.getLieuStock().getId();
-            this.lieuStockNom = produit.getLieuStock().getNom();
-        } else {
-            this.lieuStockId = null;
-            this.lieuStockNom = null;
-        }
     }
 
 

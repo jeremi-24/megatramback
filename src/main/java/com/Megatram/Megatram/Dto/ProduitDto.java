@@ -53,14 +53,6 @@ public class ProduitDto {
             this.categorieNom = null;
         }
 
-        if (produit.getLieuStock() != null) {
-            this.lieuStockId = produit.getLieuStock().getId();
-            this.lieuStockNom = produit.getLieuStock().getNom();
-        } else {
-            this.lieuStockId = null;
-            this.lieuStockNom = null;
-        }
-
         // Si vous incluez StockDto, vous devrez le peupler ici en appelant le StockService
         // this.stockInfo = stockService.getStockForProduitAndLieu(produit, produit.getLieuStock()); // Exemple
     }

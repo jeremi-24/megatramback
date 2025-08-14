@@ -13,6 +13,7 @@ public class InventaireResponseDto {
     public String charge;
     public LocalDateTime date; // Utiliser LocalDateTime si c'est le type dans l'entité
     public String status; // Nouveau champ pour le statut
+ public Long lieuStockId; // Nouveau champ pour l'ID du lieu de stock
     public List<LigneResponseDto> lignes;
 
     public InventaireResponseDto() {
@@ -23,6 +24,9 @@ public class InventaireResponseDto {
         this.inventaireId = inventaire.getId();
         this.charge = inventaire.getCharge();
         this.date = inventaire.getDate(); // Lire la date de l'entité
+        if (inventaire.getLieuStock() != null) {
+ this.lieuStockId = inventaire.getLieuStock().getId();
+        }
         // Le status sera défini dans le service
 
         // Mapper les lignes en utilisant le constructeur mis à jour de LigneResponseDto
@@ -76,5 +80,13 @@ public class InventaireResponseDto {
 
     public void setLignes(List<LigneResponseDto> lignes) {
         this.lignes = lignes;
+    }
+
+ public Long getLieuStockId() {
+ return lieuStockId;
+    }
+
+ public void setLieuStockId(Long lieuStockId) {
+ this.lieuStockId = lieuStockId;
     }
 }

@@ -21,10 +21,19 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     boolean existsByLieuId(Long id);
 
     @Query("SELECT u FROM Utilisateur u " +
+ "LEFT JOIN FETCH u.lieu l " +
        "JOIN FETCH u.role r " +
        "LEFT JOIN FETCH r.permissions " +
        "WHERE u.email = :email")
 Optional<Utilisateur> findByEmailWithPermissions(@Param("email") String email);
+
+
+@Query("SELECT u FROM Utilisateur u " +
+       "LEFT JOIN FETCH u.lieu l " +
+       "JOIN FETCH u.role r " +
+       "LEFT JOIN FETCH r.permissions " +
+       "WHERE u.email = :email")
+Optional<Utilisateur> findByEmailWithRoleAndLieu(@Param("email") String email);
 
 }
 

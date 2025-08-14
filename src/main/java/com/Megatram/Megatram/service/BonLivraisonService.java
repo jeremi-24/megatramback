@@ -107,7 +107,7 @@ public BonLivraisonService(BonLivraisonRepository bonLivraisonRepository, Comman
         if (bonLivraison.getLignesLivraison() != null) {
             for (LigneLivraison ligne : bonLivraison.getLignesLivraison()) {
                 Produit produit = ligne.getProduit();
-                LieuStock lieuStock = produit.getLieuStock();
+                LieuStock lieuStock = bonLivraison.getLieuStock();
     
                 if (lieuStock == null) {
                      throw new IllegalStateException("Le produit '" + produit.getNom() + "' n'a pas de lieu de stock attribué.");
@@ -166,7 +166,7 @@ public BonLivraisonService(BonLivraisonRepository bonLivraisonRepository, Comman
             if (bonLivraison.getLignesLivraison() != null) {
                 for (LigneLivraison ligne : bonLivraison.getLignesLivraison()) {
                     Produit produit = ligne.getProduit();
-                    LieuStock lieuStock = produit.getLieuStock();
+                    LieuStock lieuStock = bonLivraison.getLieuStock();
 
                      if (lieuStock == null) {
                          System.err.println("AVERTISSEMENT: Lieu de stock manquant pour le produit " + produit.getNom() + " lors de la suppression du BL " + id);

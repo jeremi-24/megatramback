@@ -49,6 +49,10 @@ public class InventaireService {
     public InventaireResponseDto creerInventaireSansApplique(InventaireRequestDto request) {
         Inventaire inventaire = new Inventaire();
         inventaire.setCharge(request.getCharge());
+
+        LieuStock lieuStock = lieuStockRepo.findById(request.getLieuStockId())
+                .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable avec l'ID : " + request.getLieuStockId()));
+        inventaire.setLieuStock(lieuStock);
         inventaire.setStatus("EN_ATTENTE_CONFIRMATION"); // On initialise le status en base
         inventaireRepo.save(inventaire);
 
@@ -69,6 +73,9 @@ public class InventaireService {
                 .orElseThrow(() -> new RuntimeException("Inventaire introuvable"));
 
         inventaire.setCharge(request.getCharge());
+        LieuStock lieuStock = lieuStockRepo.findById(request.getLieuStockId())
+                .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable avec l'ID : " + request.getLieuStockId()));
+        inventaire.setLieuStock(lieuStock);
         inventaire.setStatus("EN_ATTENTE_CONFIRMATION"); // Remettre le status à en attente lors de modification
         inventaireRepo.save(inventaire);
 
@@ -92,9 +99,8 @@ public class InventaireService {
             Produit produit = produitRepo.findById(ligneRequestDto.getProduitId())
                     .orElseThrow(() -> new RuntimeException("Produit introuvable"));
 
-            LieuStock lieuStock = lieuStockRepo.findByNom(ligneRequestDto.getLieuStockNom())
-                    .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable : " + ligneRequestDto.getLieuStockNom()));
-
+ LieuStock lieuStock = lieuStockRepo.findById(ligneRequestDto.getLieuStockId())
+ .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable avec l'ID : " + ligneRequestDto.getLieuStockId()));
             LigneInventaire ligneInventaire = new LigneInventaire();
             ligneInventaire.setInventaire(inventaire);
             ligneInventaire.setProduit(produit);
@@ -191,6 +197,23 @@ public class InventaireService {
         appliquerEcartsAuStock(id, premier);
         return getInventaireByIdWithStatus(id, null);
     }
+
+    /**
+ * Récupère les inventaires par lieu de stock
+ */
+ public List<InventaireResponseDto> getInventairesByLieuStock(Long lieuStockId) {
+ return inventaireRepo.findByLieuStockId(lieuStockId).stream().map(inv -> {
+ InventaireResponseDto response = new InventaireResponseDto(inv);
+ List<LigneInventaire> lignes = ligneRepo.findByInventaireId(inv.getId());
+ List<LigneResponseDto> ligneDtos = lignes.stream()
+ .map(LigneResponseDto::new)
+ .collect(Collectors.toList());
+ response.setLignes(ligneDtos);
+ // Utiliser le status en base
+ response.setStatus(inv.getStatus());
+ return response;
+ }).collect(Collectors.toList());
+ }
 
     // ========== MÉTHODES DE RÉCUPÉRATION ET EXPORT ==========
 

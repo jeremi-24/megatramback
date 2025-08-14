@@ -4,10 +4,9 @@ public class LigneInventaireDto {
 
     public Long produitId;
     public int qteScanne;
-    public String lieuStockNom;
+    public Long lieuStockId;
 
-    // Nouveau champ pour spécifier le type de quantité scannée ("CARTON" ou "UNITE")
-    public String typeQuantiteScanne;
+ public String typeQuantiteScanne;
 
     public String ref;
 
@@ -28,22 +27,14 @@ public class LigneInventaireDto {
         this.qteScanne = qteScanne;
     }
 
-    public String getLieuStockNom() {
-        return lieuStockNom;
+    public Long getLieuStockId() {
+        return lieuStockId;
     }
 
-    public void setLieuStockNom(String lieuStockNom) {
-        this.lieuStockNom = lieuStockNom;
+    public void setLieuStockId(Long lieuStockId) {
+        this.lieuStockId = lieuStockId;
     }
 
-    // Getter et Setter pour le nouveau champ typeQuantiteScanne
-    public String getTypeQuantiteScanne() {
-        return typeQuantiteScanne;
-    }
-
-    public void setTypeQuantiteScanne(String typeQuantiteScanne) {
-        this.typeQuantiteScanne = typeQuantiteScanne;
-    }
     public String getRef() {
         return ref;
     }
@@ -51,4 +42,12 @@ public class LigneInventaireDto {
     public void setRef(String ref) {
         this.ref = ref;
     }
+
+ public String getTypeQuantiteScanne() {
+ return typeQuantiteScanne;
+ }
+
+ public void setTypeQuantiteScanne(String typeQuantiteScanne) {
+ this.typeQuantiteScanne = typeQuantiteScanne;
+ }
 }

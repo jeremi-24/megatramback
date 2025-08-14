@@ -1,6 +1,5 @@
 package com.Megatram.Megatram.repository;
 
-import com.Megatram.Megatram.Entity.Categorie;
 import com.Megatram.Megatram.Entity.Produit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,16 +20,17 @@ public interface ProduitRepos extends JpaRepository<Produit, Long> {
 
     List<Produit> findByNom(String nom);
 
-    boolean existsByLieuStockId(Long id);
     Optional<Produit> findByRef(String ref);
 
-    // CORRECTION : La condition "OR CAST(p.qte AS string) = :searchTerm" a été supprimée
-    @Query("SELECT p FROM Produit p LEFT JOIN p.categorie c LEFT JOIN p.lieuStock l " +
+    // ====================== CORRECTION APPLIQUÉE ICI ======================
+    // La jointure "LEFT JOIN p.lieuStock l" et la condition de recherche sur "l.nom" ont été supprimées
+    // car le champ "lieuStock" n'existe pas dans votre entité "Produit".
+    @Query("SELECT p FROM Produit p LEFT JOIN p.categorie c " +
             "WHERE LOWER(p.nom) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "OR LOWER(p.ref) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "OR LOWER(p.codeBarre) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "OR LOWER(c.nom) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-            "OR LOWER(l.nom) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "OR CAST(p.qteMin AS string) = :searchTerm")
     List<Produit> searchProduits(@Param("searchTerm") String searchTerm);
+    // ======================================================================
 }

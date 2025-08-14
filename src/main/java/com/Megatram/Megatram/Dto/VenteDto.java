@@ -10,6 +10,7 @@ public class VenteDto {
     private Long id;
     private String ref;
     private String caissier;
+ private Long lieuStockId;
     private String clientNom;
     private Long clientId;
     private double paiement;
@@ -58,6 +59,14 @@ public class VenteDto {
 
     public void setClientId(long clientId) {
         this.clientId = clientId;
+    }
+
+    public Long getLieuStockId() {
+        return lieuStockId;
+    }
+
+    public void setLieuStockId(Long lieuStockId) {
+        this.lieuStockId = lieuStockId;
     }
 
     public double getPaiement() {
