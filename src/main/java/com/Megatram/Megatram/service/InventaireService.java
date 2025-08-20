@@ -1,5 +1,5 @@
 package com.Megatram.Megatram.service;
-
+import java.util.Comparator;
 import com.Megatram.Megatram.Dto.InventaireRequestDto;
 import com.Megatram.Megatram.Dto.InventaireResponseDto;
 import com.Megatram.Megatram.Dto.LigneInventaireDto;
@@ -248,7 +248,7 @@ public class InventaireService {
         List<LigneInventaire> lignes = ligneRepo.findByInventaireId(id);
         List<LigneResponseDto> ligneDtos = lignes.stream()
                                                 .map(LigneResponseDto::new)
-                                                .collect(Collectors.toList());
+                                                .sorted(Comparator.comparing(LigneResponseDto::getNomProduit))  .collect(Collectors.toList());
         response.setLignes(ligneDtos);
         
         // Définir le status en priorité par forceStatus sinon celui en base
