@@ -63,34 +63,44 @@ public class InventaireService {
         response.setStatus(inventaire.getStatus());
         return response;
     }
+/**
+ * Modifier un inventaire et calculer les écarts SANS appliquer au stock
+ * UNIQUEMENT si le statut est EN_ATTENTE_CONFIRMATION
+ */
+@Transactional
+public InventaireResponseDto modifierInventaireSansApplique(Long id, InventaireRequestDto request) {
+    Inventaire inventaire = inventaireRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Inventaire introuvable"));
 
-    /**
-     * Modifier un inventaire et calculer les écarts SANS appliquer au stock
-     */
-    @Transactional
-    public InventaireResponseDto modifierInventaireSansApplique(Long id, InventaireRequestDto request) {
-        Inventaire inventaire = inventaireRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Inventaire introuvable"));
-
-        inventaire.setCharge(request.getCharge());
-        LieuStock lieuStock = lieuStockRepo.findById(request.getLieuStockId())
-                .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable avec l'ID : " + request.getLieuStockId()));
-        inventaire.setLieuStock(lieuStock);
-        inventaire.setStatus("EN_ATTENTE_CONFIRMATION"); // Remettre le status à en attente lors de modification
-        inventaireRepo.save(inventaire);
-
-        // Supprimer les anciennes lignes
-        List<LigneInventaire> anciennesLignes = ligneRepo.findByInventaireId(id);
-        ligneRepo.deleteAll(anciennesLignes);
-
-        List<LigneResponseDto> lignesReponse = calculerEcartsSansAppliquer(inventaire, request.getProduits());
-
-        InventaireResponseDto response = new InventaireResponseDto(inventaire);
-        response.setLignes(lignesReponse);
-        response.setStatus(inventaire.getStatus());
-        return response;
+    // Vérifier que l'inventaire est en attente de confirmation
+    if (!"EN_ATTENTE_CONFIRMATION".equalsIgnoreCase(inventaire.getStatus())) {
+        throw new RuntimeException("Impossible de modifier l'inventaire : le statut doit être 'EN_ATTENTE_CONFIRMATION'. Statut actuel : " + inventaire.getStatus());
     }
 
+    // Mise à jour des propriétés de l'inventaire
+    inventaire.setCharge(request.getCharge());
+    LieuStock lieuStock = lieuStockRepo.findById(request.getLieuStockId())
+            .orElseThrow(() -> new RuntimeException("Lieu de stock introuvable avec l'ID : " + request.getLieuStockId()));
+    inventaire.setLieuStock(lieuStock);
+    
+    // Sauvegarder d'abord l'inventaire mis à jour
+    inventaireRepo.save(inventaire);
+
+    // Supprimer proprement toutes les anciennes lignes
+    List<LigneInventaire> anciennesLignes = ligneRepo.findByInventaireId(id);
+    if (!anciennesLignes.isEmpty()) {
+        ligneRepo.deleteAll(anciennesLignes);
+        ligneRepo.flush(); // Force l'écriture en base
+    }
+
+    // Calculer et créer les nouvelles lignes
+    List<LigneResponseDto> lignesReponse = calculerEcartsSansAppliquer(inventaire, request.getProduits());
+
+    InventaireResponseDto response = new InventaireResponseDto(inventaire);
+    response.setLignes(lignesReponse);
+    response.setStatus(inventaire.getStatus());
+    return response;
+}
     /**
      * Méthode commune pour calculer les écarts sans appliquer au stock
      */
@@ -191,12 +201,17 @@ public class InventaireService {
     /**
      * Méthode combinée : modifier et appliquer directement (pour compatibilité)
      */
-    @Transactional
-    public InventaireResponseDto modifierInventaire(Long id, InventaireRequestDto request, boolean premier) {
-        InventaireResponseDto response = modifierInventaireSansApplique(id, request);
-        appliquerEcartsAuStock(id, premier);
-        return getInventaireByIdWithStatus(id, null);
-    }
+   /**
+ * Méthode combinée : modifier et appliquer directement (pour compatibilité)
+ * UNIQUEMENT si le statut est EN_ATTENTE_CONFIRMATION
+ */
+@Transactional
+public InventaireResponseDto modifierInventaire(Long id, InventaireRequestDto request, boolean premier) {
+    // La vérification du statut est déjà faite dans modifierInventaireSansApplique
+    InventaireResponseDto response = modifierInventaireSansApplique(id, request);
+    appliquerEcartsAuStock(id, premier);
+    return getInventaireByIdWithStatus(id, null);
+}
 
     /**
  * Récupère les inventaires par lieu de stock

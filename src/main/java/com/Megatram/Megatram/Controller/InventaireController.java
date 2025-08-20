@@ -48,16 +48,34 @@ public class InventaireController {
      * Étape 1 bis : Modifier un inventaire et recalculer les écarts (SANS appliquer au stock)
      */
     @Operation(summary = "Modifier un inventaire et recalculer les écarts sans appliquer au stock")
-    @PutMapping("/{id}/calculer")
-    @PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')")
-    public ResponseEntity<InventaireResponseDto> recalculerInventaire(
-            @PathVariable Long id, 
-            @RequestBody InventaireRequestDto request) {
- request.setLieuStockId(request.getLieuStockId()); // Ensure lieuStockId is in the request body
+@PutMapping("/{id}/calculer")
+@PreAuthorize("hasAuthority('INVENTAIRE_MANAGE') or hasAnyRole('ADMIN')")
+public ResponseEntity<?> recalculerInventaire(
+        @PathVariable Long id, 
+        @RequestBody InventaireRequestDto request) {
+    try {
+        request.setLieuStockId(request.getLieuStockId()); // Ensure lieuStockId is in the request body
         InventaireResponseDto response = inventaireService.modifierInventaireSansApplique(id, request);
         return ResponseEntity.ok(response);
+    } catch (RuntimeException e) {
+        if (e.getMessage().contains("statut doit être")) {
+            // Erreur de statut invalide
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "STATUT_INVALIDE",
+                "message", e.getMessage()
+            ));
+        } else if (e.getMessage().contains("introuvable")) {
+            // Erreur entité non trouvée
+            return ResponseEntity.notFound().build();
+        } else {
+            // Autres erreurs
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "ERREUR_INTERNE",
+                "message", e.getMessage()
+            ));
+        }
     }
-
+}
     /**
      * Obtenir un résumé des écarts avant confirmation
      */
