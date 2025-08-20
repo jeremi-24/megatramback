@@ -153,40 +153,92 @@ public InventaireResponseDto modifierInventaireSansApplique(Long id, InventaireR
      * Appliquer les écarts calculés au stock après confirmation
      */
     @Transactional
-    public InventaireResponseDto appliquerEcartsAuStock(Long inventaireId, boolean premier) {
-        List<LigneInventaire> lignes = ligneRepo.findByInventaireId(inventaireId);
+public InventaireResponseDto appliquerEcartsAuStock(Long inventaireId, boolean premier) {
+    // Log de début avec les paramètres
+    System.out.println("=== DEBUT appliquerEcartsAuStock ===");
+    System.out.println("InventaireId: " + inventaireId);
+    System.out.println("Premier: " + premier);
+    
+    List<LigneInventaire> lignes = ligneRepo.findByInventaireId(inventaireId);
+    
+    // Log des données retournées par findByInventaireId
+    System.out.println("--- Données retournées par findByInventaireId ---");
+    System.out.println("Nombre de lignes trouvées: " + (lignes != null ? lignes.size() : "null"));
+    
+    if (lignes != null) {
+        for (int i = 0; i < lignes.size(); i++) {
+            LigneInventaire ligne = lignes.get(i);
+            System.out.println("Ligne " + (i + 1) + ":");
+            System.out.println("  - ID: " + ligne.getId());
+            System.out.println("  - Produit: " + (ligne.getProduit() != null ? ligne.getProduit().getNom() + " (ID: " + ligne.getProduit().getId() + ")" : "null"));
+            System.out.println("  - LieuStock: " + (ligne.getLieuStock() != null ? ligne.getLieuStock().getNom() + " (ID: " + ligne.getLieuStock().getId() + ")" : "null"));
+            System.out.println("  - QteAvantScan: " + ligne.getQteAvantScan());
+            System.out.println("  - QteScanne: " + ligne.getQteScanne());
+            System.out.println("  - Ecart: " + ligne.getEcart());
+            System.out.println("  ---");
+        }
+    }
+    
+    for (LigneInventaire ligne : lignes) {
+        System.out.println("--- Traitement de la ligne ID: " + ligne.getId() + " ---");
         
-        for (LigneInventaire ligne : lignes) {
-            Produit produit = ligne.getProduit();
-            LieuStock lieuStock = ligne.getLieuStock();
+        Produit produit = ligne.getProduit();
+        LieuStock lieuStock = ligne.getLieuStock();
+        
+        System.out.println("Produit récupéré: " + (produit != null ? produit.getNom() : "null"));
+        System.out.println("LieuStock récupéré: " + (lieuStock != null ? lieuStock.getNom() : "null"));
+        
+        if (premier) {
+            System.out.println("Mode PREMIER - Ajout de stock: " + ligne.getQteScanne());
+            // Si premier = true, on met seulement la quantité scannée sans faire d'écart
+            stockService.addStock(produit, lieuStock, ligne.getQteScanne());
+        } else {
+            // Si premier = false, on applique les écarts comme avant
+            int ecart = ligne.getEcart();
+            System.out.println("Mode NORMAL - Ecart calculé: " + ecart);
             
-            if (premier) {
-                // Si premier = true, on met seulement la quantité scannée sans faire d'écart
+            if (ecart > 0) {
+                System.out.println("Ecart positif - Ajout de stock: " + ecart);
+                stockService.addStock(produit, lieuStock, ecart);
+            } else if (ecart < 0) {
+                System.out.println("Ecart négatif - Suppression de stock: " + Math.abs(ecart));
+                stockService.removeStock(produit, lieuStock, Math.abs(ecart));
+            } else if (ecart == 0 && ligne.getQteAvantScan() == 0 && ligne.getQteScanne() > 0) {
+                System.out.println("Cas spécial - Création de stock pour produit inexistant: " + ligne.getQteScanne());
+                // Cas spécial : création de stock pour un produit inexistant
                 stockService.addStock(produit, lieuStock, ligne.getQteScanne());
             } else {
-                // Si premier = false, on applique les écarts comme avant
-                int ecart = ligne.getEcart();
-                
-                if (ecart > 0) {
-                    stockService.addStock(produit, lieuStock, ecart);
-                } else if (ecart < 0) {
-                    stockService.removeStock(produit, lieuStock, Math.abs(ecart));
-                } else if (ecart == 0 && ligne.getQteAvantScan() == 0 && ligne.getQteScanne() > 0) {
-                    // Cas spécial : création de stock pour un produit inexistant
-                    stockService.addStock(produit, lieuStock, ligne.getQteScanne());
-                }
+                System.out.println("Aucune action requise pour cette ligne");
             }
         }
-
-        // Mettre à jour le status dans la base à "CONFIRME"
-        Inventaire inventaire = inventaireRepo.findById(inventaireId)
-                .orElseThrow(() -> new RuntimeException("Inventaire introuvable"));
-        inventaire.setStatus("CONFIRME");
-        inventaireRepo.save(inventaire);
-
-        // Retourner la réponse avec le status mis à jour
-        return getInventaireByIdWithStatus(inventaireId, null);
+        System.out.println("--- Fin traitement ligne ---");
     }
+    
+    // Log avant mise à jour du status
+    System.out.println("--- Mise à jour du status ---");
+    
+    // Mettre à jour le status dans la base à "CONFIRME"
+    Inventaire inventaire = inventaireRepo.findById(inventaireId)
+            .orElseThrow(() -> new RuntimeException("Inventaire introuvable"));
+    
+    System.out.println("Inventaire trouvé - ID: " + inventaire.getId() + ", Status avant: " + inventaire.getStatus());
+    
+    inventaire.setStatus("CONFIRME");
+    inventaireRepo.save(inventaire);
+    
+    System.out.println("Status mis à jour: " + inventaire.getStatus());
+    
+    // Log avant retour
+    System.out.println("--- Appel de getInventaireByIdWithStatus ---");
+    
+    // Retourner la réponse avec le status mis à jour
+    InventaireResponseDto response = getInventaireByIdWithStatus(inventaireId, null);
+    
+    System.out.println("Response générée - Status: " + (response != null ? response.getStatus() : "null"));
+    System.out.println("=== FIN appliquerEcartsAuStock ===");
+    
+    return response;
+}
 
     /**
      * Méthode combinée : créer et appliquer directement (pour compatibilité)
