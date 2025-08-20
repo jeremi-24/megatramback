@@ -72,20 +72,25 @@ public class ProduitService {
     public ProduitDto createProduit(ProduitRequestDTO dto) {
         Categorie categorie = categorieRep.findById(dto.getCategorieId())
                 .orElseThrow(() -> new EntityNotFoundException("Catégorie non trouvée avec l'ID : " + dto.getCategorieId()));
-
+    
         Produit produit = new Produit();
+        
+        // AJOUT DES CHAMPS MANQUANTS
+        produit.setNom(dto.getNom());           // <- MANQUANT
+        produit.setRef(dto.getRef());           // <- MANQUANT  
+        produit.setPrix(dto.getPrix());         // <- MANQUANT
+        
+        // Champs existants
         produit.setQteMin(dto.getQteMin());
-        // produit.setQte(0); // Ancienne gestion de quantité, remplacée par le système de stock
         produit.setCategorie(categorie);
-        produit.setQteParCarton(dto.getQteParCarton()); // Définir la quantité par carton
-        produit.setPrixCarton(dto.getPrixCarton()); // Définir le prix par carton
-
-
+        produit.setQteParCarton(dto.getQteParCarton());
+        produit.setPrixCarton(dto.getPrixCarton());
+    
         Produit savedProduit = produitRepos.save(produit);
-
+    
         generateBarcodeImage(savedProduit.getCodeBarre());
-
-        return new ProduitDto(savedProduit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
+    
+        return new ProduitDto(savedProduit);
     }
 
     /**
