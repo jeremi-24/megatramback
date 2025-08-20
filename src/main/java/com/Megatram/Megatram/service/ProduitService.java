@@ -100,7 +100,7 @@ public class ProduitService {
     public ProduitDto updateProduit(Long id, ProduitRequestDTO dto) {
         Produit produitToUpdate = produitRepos.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produit non trouvé pour la mise à jour : " + id));
-
+        produitToUpdate.setNom(dto.getNom());
         produitToUpdate.setRef(dto.getRef());
         produitToUpdate.setPrix(dto.getPrix()); // Prix unitaire
         produitToUpdate.setQteMin(dto.getQteMin());
@@ -109,7 +109,7 @@ public class ProduitService {
 
 
         Produit updatedProduit = produitRepos.save(produitToUpdate);
-
+       
         return new ProduitDto(updatedProduit); // Assurez-vous que le constructeur de ProduitDto gère les nouveaux champs
     }
 
