@@ -6,6 +6,7 @@ public class StockDto {
 
     private Long id;
     private String produitNom;
+    private String produitRef;
     private String lieuStockNom;
     private int qteCartons;
     private int qteUnitesRestantes;
@@ -18,6 +19,7 @@ public class StockDto {
         this.id = stock.getId();
         this.produitNom = stock.getProduit().getNom();
         this.lieuStockNom = stock.getLieuStock().getNom();
+        this.produitRef = stock.getProduit().getRef();
         this.qteCartons = stock.getQteCartons();
         this.qteUnitesRestantes = stock.getQteUnitesRestantes();
     }
@@ -28,6 +30,8 @@ public class StockDto {
     public void setId(Long id) { this.id = id; }
     public String getProduitNom() { return produitNom; }
     public void setProduitNom(String produitNom) { this.produitNom = produitNom; }
+    public String getProduitRef() { return produitRef; }
+    public void setProduitRef(String produitRef) { this.produitRef = produitRef; }
     public String getLieuStockNom() { return lieuStockNom; }
     public void setLieuStockNom(String lieuStockNom) { this.lieuStockNom = lieuStockNom; }
     public int getQteCartons() { return qteCartons; }
